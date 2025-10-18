@@ -1,0 +1,433 @@
+# ============================================================================
+# STRAT Trading System - Kubernetes Deployments
+# ============================================================================
+# Production deployments with auto-scaling, health checks, and security
+# ============================================================================
+
+# ============================================================================
+# STRAT Main Application Deployment
+# ============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: strat-app
+  namespace: strat-trading
+  labels:
+    app: strat-trading
+    component: app
+    version: v1.0.0
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: strat-trading
+      component: app
+  template:
+    metadata:
+      labels:
+        app: strat-trading
+        component: app
+        version: v1.0.0
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: strat-app
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: strat-app
+        image: strat-trading:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 8000
+          protocol: TCP
+        - name: api
+          containerPort: 8001
+          protocol: TCP
+        envFrom:
+        - configMapRef:
+            name: strat-app-config
+        - secretRef:
+            name: strat-app-secrets
+        - secretRef:
+            name: strat-database-secrets
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        resources:
+          requests:
+            cpu: 1000m
+            memory: 2Gi
+            ephemeral-storage: 1Gi
+          limits:
+            cpu: 4000m
+            memory: 8Gi
+            ephemeral-storage: 5Gi
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+          successThreshold: 1
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+          successThreshold: 1
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: logs
+          mountPath: /app/logs
+        - name: data
+          mountPath: /app/data
+        - name: cache
+          mountPath: /app/cache
+        - name: results
+          mountPath: /app/backtest_results
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: logs
+        persistentVolumeClaim:
+          claimName: strat-logs-pvc
+      - name: data
+        persistentVolumeClaim:
+          claimName: strat-data-pvc
+      - name: cache
+        emptyDir:
+          sizeLimit: 2Gi
+      - name: results
+        persistentVolumeClaim:
+          claimName: strat-results-pvc
+      - name: tmp
+        emptyDir:
+          sizeLimit: 1Gi
+      nodeSelector:
+        kubernetes.io/os: linux
+      tolerations:
+      - key: "app"
+        operator: "Equal"
+        value: "strat-trading"
+        effect: "NoSchedule"
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - strat-trading
+                - key: component
+                  operator: In
+                  values:
+                  - app
+              topologyKey: kubernetes.io/hostname
+
+---
+# ============================================================================
+# STRAT Dashboard Deployment
+# ============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: strat-dashboard
+  namespace: strat-trading
+  labels:
+    app: strat-trading
+    component: dashboard
+    version: v1.0.0
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: strat-trading
+      component: dashboard
+  template:
+    metadata:
+      labels:
+        app: strat-trading
+        component: dashboard
+        version: v1.0.0
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8501"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: strat-app
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+      - name: strat-dashboard
+        image: strat-trading:latest
+        imagePullPolicy: IfNotPresent
+        command: ["streamlit", "run", "dashboards/unified_dashboard.py"]
+        args:
+          - "--server.port=8501"
+          - "--server.address=0.0.0.0"
+          - "--server.headless=true"
+          - "--server.enableCORS=false"
+          - "--server.enableXsrfProtection=true"
+        ports:
+        - name: http
+          containerPort: 8501
+          protocol: TCP
+        envFrom:
+        - configMapRef:
+            name: strat-app-config
+        env:
+        - name: STREAMLIT_SERVER_HEADLESS
+          value: "true"
+        - name: STREAMLIT_BROWSER_GATHER_USAGE_STATS
+          value: "false"
+        resources:
+          requests:
+            cpu: 500m
+            memory: 1Gi
+            ephemeral-storage: 500Mi
+          limits:
+            cpu: 2000m
+            memory: 4Gi
+            ephemeral-storage: 2Gi
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: logs
+          mountPath: /app/logs
+          readOnly: true
+        - name: data
+          mountPath: /app/data
+          readOnly: true
+        - name: results
+          mountPath: /app/backtest_results
+          readOnly: true
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: logs
+        persistentVolumeClaim:
+          claimName: strat-logs-pvc
+      - name: data
+        persistentVolumeClaim:
+          claimName: strat-data-pvc
+      - name: results
+        persistentVolumeClaim:
+          claimName: strat-results-pvc
+      - name: tmp
+        emptyDir:
+          sizeLimit: 500Mi
+
+---
+# ============================================================================
+# PostgreSQL Database Deployment
+# ============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: strat-postgres
+  namespace: strat-trading
+  labels:
+    app: strat-trading
+    component: database
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: strat-trading
+      component: database
+  template:
+    metadata:
+      labels:
+        app: strat-trading
+        component: database
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:16-alpine
+        ports:
+        - name: postgres
+          containerPort: 5432
+          protocol: TCP
+        envFrom:
+        - configMapRef:
+            name: strat-app-config
+        - secretRef:
+            name: strat-database-secrets
+        env:
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        resources:
+          requests:
+            cpu: 500m
+            memory: 1Gi
+          limits:
+            cpu: 1000m
+            memory: 2Gi
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data
+        - name: postgres-init
+          mountPath: /docker-entrypoint-initdb.d
+          readOnly: true
+        livenessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - $(POSTGRES_USER)
+            - -d
+            - $(POSTGRES_DB)
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - $(POSTGRES_USER)
+            - -d
+            - $(POSTGRES_DB)
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+      volumes:
+      - name: postgres-data
+        persistentVolumeClaim:
+          claimName: strat-postgres-pvc
+      - name: postgres-init
+        configMap:
+          name: postgres-init-config
+
+---
+# ============================================================================
+# Redis Cache Deployment
+# ============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: strat-redis
+  namespace: strat-trading
+  labels:
+    app: strat-trading
+    component: cache
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: strat-trading
+      component: cache
+  template:
+    metadata:
+      labels:
+        app: strat-trading
+        component: cache
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        command: ["redis-server"]
+        args: ["--appendonly", "yes", "--maxmemory", "1gb", "--maxmemory-policy", "allkeys-lru"]
+        ports:
+        - name: redis
+          containerPort: 6379
+          protocol: TCP
+        resources:
+          requests:
+            cpu: 250m
+            memory: 512Mi
+          limits:
+            cpu: 500m
+            memory: 1Gi
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+        livenessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+        readinessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+      volumes:
+      - name: redis-data
+        persistentVolumeClaim:
+          claimName: strat-redis-pvc

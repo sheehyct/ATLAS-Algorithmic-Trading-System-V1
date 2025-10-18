@@ -1,0 +1,245 @@
+# ============================================================================
+# STRAT Trading System - Persistent Volume Claims
+# ============================================================================
+# Storage configuration for logs, data, results, and database
+# ============================================================================
+
+# ============================================================================
+# Logs Storage
+# ============================================================================
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: strat-logs-pvc
+  namespace: strat-trading
+  labels:
+    app: strat-trading
+    component: storage
+    type: logs
+spec:
+  accessModes:
+    - ReadWriteMany  # Multiple pods can read/write
+  storageClassName: fast-ssd  # Use appropriate storage class
+  resources:
+    requests:
+      storage: 50Gi
+  volumeMode: Filesystem
+
+---
+# ============================================================================
+# Historical Data Storage
+# ============================================================================
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: strat-data-pvc
+  namespace: strat-trading
+  labels:
+    app: strat-trading
+    component: storage
+    type: data
+spec:
+  accessModes:
+    - ReadWriteMany  # Multiple pods need access to historical data
+  storageClassName: standard  # Can use standard storage for historical data
+  resources:
+    requests:
+      storage: 500Gi  # Large storage for historical market data
+  volumeMode: Filesystem
+
+---
+# ============================================================================
+# Backtest Results Storage
+# ============================================================================
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: strat-results-pvc
+  namespace: strat-trading
+  labels:
+    app: strat-trading
+    component: storage
+    type: results
+spec:
+  accessModes:
+    - ReadWriteMany  # Multiple pods may generate/read results
+  storageClassName: fast-ssd  # Fast access for results
+  resources:
+    requests:
+      storage: 100Gi
+  volumeMode: Filesystem
+
+---
+# ============================================================================
+# PostgreSQL Database Storage
+# ============================================================================
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: strat-postgres-pvc
+  namespace: strat-trading
+  labels:
+    app: strat-trading
+    component: database
+    type: postgres
+spec:
+  accessModes:
+    - ReadWriteOnce  # Single pod access for database
+  storageClassName: fast-ssd  # High-performance storage for database
+  resources:
+    requests:
+      storage: 100Gi
+  volumeMode: Filesystem
+
+---
+# ============================================================================
+# Redis Cache Storage
+# ============================================================================
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: strat-redis-pvc
+  namespace: strat-trading
+  labels:
+    app: strat-trading
+    component: cache
+    type: redis
+spec:
+  accessModes:
+    - ReadWriteOnce  # Single pod access for Redis
+  storageClassName: fast-ssd  # Fast storage for cache persistence
+  resources:
+    requests:
+      storage: 20Gi
+  volumeMode: Filesystem
+
+---
+# ============================================================================
+# Prometheus Metrics Storage
+# ============================================================================
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: strat-prometheus-pvc
+  namespace: strat-trading
+  labels:
+    app: strat-trading
+    component: monitoring
+    type: prometheus
+spec:
+  accessModes:
+    - ReadWriteOnce  # Single pod access for Prometheus
+  storageClassName: standard  # Standard storage for metrics
+  resources:
+    requests:
+      storage: 50Gi
+  volumeMode: Filesystem
+
+---
+# ============================================================================
+# Grafana Dashboard Storage
+# ============================================================================
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: strat-grafana-pvc
+  namespace: strat-trading
+  labels:
+    app: strat-trading
+    component: monitoring
+    type: grafana
+spec:
+  accessModes:
+    - ReadWriteOnce  # Single pod access for Grafana
+  storageClassName: standard  # Standard storage for dashboards
+  resources:
+    requests:
+      storage: 10Gi
+  volumeMode: Filesystem
+
+---
+# ============================================================================
+# Shared Cache Storage (for multi-pod caching)
+# ============================================================================
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: strat-shared-cache-pvc
+  namespace: strat-trading
+  labels:
+    app: strat-trading
+    component: storage
+    type: shared-cache
+spec:
+  accessModes:
+    - ReadWriteMany  # Multiple pods can share cache
+  storageClassName: fast-ssd  # Fast access for shared cache
+  resources:
+    requests:
+      storage: 50Gi
+  volumeMode: Filesystem
+
+---
+# ============================================================================
+# Storage Classes (example configurations)
+# ============================================================================
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: fast-ssd
+  labels:
+    app: strat-trading
+provisioner: kubernetes.io/aws-ebs  # Adjust for your cloud provider
+parameters:
+  type: gp3  # AWS EBS GP3 volumes
+  fsType: ext4
+  encrypted: "true"
+reclaimPolicy: Retain
+allowVolumeExpansion: true
+volumeBindingMode: WaitForFirstConsumer
+
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: standard
+  labels:
+    app: strat-trading
+provisioner: kubernetes.io/aws-ebs  # Adjust for your cloud provider
+parameters:
+  type: gp2  # AWS EBS GP2 volumes
+  fsType: ext4
+  encrypted: "true"
+reclaimPolicy: Retain
+allowVolumeExpansion: true
+volumeBindingMode: WaitForFirstConsumer
+
+---
+# ============================================================================
+# Volume Snapshots (for backup and recovery)
+# ============================================================================
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshotClass
+metadata:
+  name: strat-snapshot-class
+  labels:
+    app: strat-trading
+driver: ebs.csi.aws.com  # Adjust for your cloud provider
+deletionPolicy: Retain
+parameters:
+  encrypted: "true"
+
+---
+# Example volume snapshot for database backup
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshot
+metadata:
+  name: strat-postgres-snapshot
+  namespace: strat-trading
+  labels:
+    app: strat-trading
+    component: backup
+spec:
+  volumeSnapshotClassName: strat-snapshot-class
+  source:
+    persistentVolumeClaimName: strat-postgres-pvc

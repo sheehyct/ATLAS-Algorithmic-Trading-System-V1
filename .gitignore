@@ -1,0 +1,132 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Testing
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Jupyter
+.ipynb_checkpoints
+*.ipynb
+
+# IDEs
+.vscode/settings.json
+.vscode/launch.json
+.idea/
+*.swp
+*.swo
+
+# Trading System Specific
+# API Keys and Secrets - CRITICAL SECURITY
+.env
+.env.*
+!.env.template
+*.key
+*.secret
+config/*.key
+config/*.secret
+credentials.json
+secrets.json
+api_keys.json
+
+# Local Configuration
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+config/local_*.py
+config/local_*.yaml
+config/local_*.json
+
+# Claude Code Settings (keep local only)
+.claude/settings.local.json
+
+# Data Files
+data/
+*.csv
+*.parquet
+*.h5
+*.hdf5
+*.db
+*.sqlite
+
+# Log Files
+logs/
+*.log
+*.log.*
+log_*.txt
+
+# Temporary Files
+tmp/
+temp/
+*.tmp
+*.temp
+nul
+
+# Cache
+.cache/
+cache/
+*.cache
+
+# Trading Data
+market_data/
+historical_data/
+backtest_results/
+optimization_results/
+performance_reports/
+
+# Model Files
+models/
+*.pkl
+*.joblib
+*.model
+
+# OS Specific
+.DS_Store
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# MCP Servers (development tools, not core project code)
+alpaca-mcp-server/
+alphavantage/
+jupyter-mcp-server/
+matplotlib_mcp/

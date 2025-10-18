@@ -1,0 +1,221 @@
+# ============================================================================
+# STRAT Trading System - Kubernetes Services
+# ============================================================================
+# Service definitions for application, dashboard, database, and monitoring
+# ============================================================================
+
+# ============================================================================
+# STRAT Application Service
+# ============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: strat-app
+  namespace: strat-trading
+  labels:
+    app: strat-trading
+    component: app
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8000"
+    prometheus.io/path: "/metrics"
+spec:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 8000
+    targetPort: http
+    protocol: TCP
+  - name: api
+    port: 8001
+    targetPort: api
+    protocol: TCP
+  selector:
+    app: strat-trading
+    component: app
+
+---
+# ============================================================================
+# STRAT Dashboard Service
+# ============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: strat-dashboard
+  namespace: strat-trading
+  labels:
+    app: strat-trading
+    component: dashboard
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8501"
+    prometheus.io/path: "/metrics"
+spec:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 8501
+    targetPort: http
+    protocol: TCP
+  selector:
+    app: strat-trading
+    component: dashboard
+
+---
+# ============================================================================
+# PostgreSQL Database Service
+# ============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: strat-postgres
+  namespace: strat-trading
+  labels:
+    app: strat-trading
+    component: database
+spec:
+  type: ClusterIP
+  ports:
+  - name: postgres
+    port: 5432
+    targetPort: postgres
+    protocol: TCP
+  selector:
+    app: strat-trading
+    component: database
+
+---
+# ============================================================================
+# Redis Cache Service
+# ============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: strat-redis
+  namespace: strat-trading
+  labels:
+    app: strat-trading
+    component: cache
+spec:
+  type: ClusterIP
+  ports:
+  - name: redis
+    port: 6379
+    targetPort: redis
+    protocol: TCP
+  selector:
+    app: strat-trading
+    component: cache
+
+---
+# ============================================================================
+# Prometheus Monitoring Service
+# ============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: strat-prometheus
+  namespace: strat-trading
+  labels:
+    app: strat-trading
+    component: monitoring
+spec:
+  type: ClusterIP
+  ports:
+  - name: prometheus
+    port: 9090
+    targetPort: 9090
+    protocol: TCP
+  selector:
+    app: strat-trading
+    component: monitoring
+
+---
+# ============================================================================
+# Grafana Monitoring Service
+# ============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: strat-grafana
+  namespace: strat-trading
+  labels:
+    app: strat-trading
+    component: monitoring
+spec:
+  type: ClusterIP
+  ports:
+  - name: grafana
+    port: 3000
+    targetPort: 3000
+    protocol: TCP
+  selector:
+    app: strat-trading
+    component: monitoring
+
+---
+# ============================================================================
+# Load Balancer Service (for external access)
+# ============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: strat-load-balancer
+  namespace: strat-trading
+  labels:
+    app: strat-trading
+    component: load-balancer
+spec:
+  type: LoadBalancer
+  loadBalancerSourceRanges:
+  - 10.0.0.0/8
+  - 172.16.0.0/12
+  - 192.168.0.0/16
+  ports:
+  - name: app-http
+    port: 80
+    targetPort: 8000
+    protocol: TCP
+  - name: app-api
+    port: 8001
+    targetPort: 8001
+    protocol: TCP
+  - name: dashboard
+    port: 8501
+    targetPort: 8501
+    protocol: TCP
+  - name: grafana
+    port: 3000
+    targetPort: 3000
+    protocol: TCP
+  selector:
+    app: strat-trading
+
+---
+# ============================================================================
+# NodePort Service (alternative for development/testing)
+# ============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: strat-nodeport
+  namespace: strat-trading
+  labels:
+    app: strat-trading
+    component: nodeport
+spec:
+  type: NodePort
+  ports:
+  - name: app-http
+    port: 8000
+    targetPort: http
+    nodePort: 30800
+    protocol: TCP
+  - name: dashboard
+    port: 8501
+    targetPort: http
+    nodePort: 30851
+    protocol: TCP
+  selector:
+    app: strat-trading
+    component: app

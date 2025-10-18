@@ -1,0 +1,131 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Start Development Session",
+            "type": "shell",
+            "command": "claude",
+            "args": ["--command", "/dev-session-start ${input:sessionName}"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Update Development Session",
+            "type": "shell",
+            "command": "claude",
+            "args": ["--command", "/dev-session-update ${input:sessionNotes}"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "End Development Session",
+            "type": "shell",
+            "command": "claude",
+            "args": ["--command", "/dev-session-end ${input:sessionNotes}"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Run Tests",
+            "type": "shell",
+            "command": "uv",
+            "args": ["run", "-m", "pytest", "tests/"],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Test MCP Servers",
+            "type": "shell",
+            "command": "uv",
+            "args": ["run", "python", "test_fixed_mcp_servers.py"],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Format Code",
+            "type": "shell",
+            "command": "uv",
+            "args": ["run", "-m", "black", "src/"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Lint Code",
+            "type": "shell",
+            "command": "uv",
+            "args": ["run", "-m", "ruff", "check", "src/"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Sync Dependencies",
+            "type": "shell",
+            "command": "uv",
+            "args": ["sync"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        }
+    ],
+    "inputs": [
+        {
+            "id": "sessionName",
+            "description": "Development session name",
+            "default": "feature-development",
+            "type": "promptString"
+        },
+        {
+            "id": "sessionNotes",
+            "description": "Session notes or updates",
+            "default": "",
+            "type": "promptString"
+        }
+    ]
+}

@@ -1,0 +1,59 @@
+[project]
+name = "vectorbt-workspace"
+version = "0.1.0"
+description = "Professional STRAT Trading Bot with VectorBT PRO"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "vectorbtpro @ git+https://github.com/polakowo/vectorbt.pro.git@v2025.10.15",
+    "alpaca-py>=0.42.0",
+    "alpaca-trade-api>=3.2.0",
+    "dash>=2.14.0",
+    "dash-bootstrap-components>=1.5.0",
+    "datashader>=0.18.2",
+    "holidays>=0.79",
+    "hvplot>=0.12.0",
+    "ipywidgets>=8.1.7",
+    "jinja2>=3.1.6",
+    "jupyter>=1.1.1",
+    "jupyterlab>=4.4.5",
+    "matplotlib>=3.10.5",
+    "mcp>=1.0.0",
+    "numpy>=1.26.0",
+    "pandas>=2.1.0",
+    "pandas-market-calendars>=4.0.0",
+    "panel>=1.7.5",
+    "plotly>=6.2.0",
+    "openai>=1.51.0",
+    "python-dotenv>=1.1.1",
+    "requests>=2.32.4",
+    "rich>=13.7.1",
+    "seaborn>=0.13.2",
+    "streamlit>=1.48.0",
+    "scipy>=1.16.0",
+    "optuna>=4.0.0",
+    "pytest-cov>=6.3.0",
+    "selenium>=4.11.0",
+    "multiprocess>=0.70.18",
+    "pytest-asyncio>=1.2.0",
+    "psutil>=7.0.0",
+    "typer>=0.12.5",
+    "lmdbm>=0.0.6",
+    "bm25s>=0.2.14",
+    "tiktoken>=0.12.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=7.0.0",
+    "black>=22.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+]
+
+[tool.uv.workspace]
+members = []
+
+[tool.uv]
+managed = true
+default-groups = []

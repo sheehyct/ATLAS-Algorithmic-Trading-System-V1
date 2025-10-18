@@ -1,0 +1,381 @@
+Trade #1: LONG - 2-2
+--------------------------------------------------------------------------------
+  ENTRY SETUP:
+  ------------
+    2023-10-03: 2D (Bear)    O=$427.46 H=$428.46 L=$420.18 C=$421.57
+    2023-10-04: 2D (Bear)    O=$420.33 H=$425.43 L=$418.81 C=$424.19
+    2023-10-05: 2U (Bull)    O=$424.06 H=$425.45 L=$421.17 C=$423.96
+  
+  TRADE DETAILS:
+  --------------
+  Entry Date:       2023-10-05
+  Entry Price:      $424.38
+  Stop Loss:        $421.17
+  Target:           $430.19
+  TFC Score:        0.50 (4-timeframe: H+D+W+M)
+  
+  EXIT DETAILS:
+  -------------
+  Exit Date:        2023-10-13
+  Exit Bar Type:    2D (Bearish)
+  Exit Price:       $430.02
+  Exit Reason:      Reversal (2D bar)
+  Days Held:        8
+  
+  RESULT:
+  -------
+  P&L:              $1125.49 (+1.13%)
+  Status:           WIN
+
+Trade #2: LONG - 3-1-2
+--------------------------------------------------------------------------------
+  ENTRY SETUP:
+  ------------
+    2023-11-10: 3 (Outside)  O=$433.60 H=$441.09 L=$433.07 C=$439.96
+    2023-11-11: 1 (Inside)   O=$439.96 H=$440.20 L=$439.85 C=$440.20
+    2023-11-13: 2U (Bull)    O=$439.40 H=$441.33 L=$438.42 C=$440.38
+  
+  TRADE DETAILS:
+  --------------
+  Entry Date:       2023-11-13
+  Entry Price:      $440.82
+  Stop Loss:        $439.85
+  Target:           $441.09
+  TFC Score:        0.95 (4-timeframe: H+D+W+M)
+  
+  EXIT DETAILS:
+  -------------
+  Exit Date:        2023-11-16
+  Exit Bar Type:    2D (Bearish)
+  Exit Price:       $449.93
+  Exit Reason:      Target Hit
+  Days Held:        3
+  
+  RESULT:
+  -------
+  P&L:              $1883.46 (+1.86%)
+  Status:           WIN
+
+Trade #3: SHORT - 2-2
+--------------------------------------------------------------------------------
+  ENTRY SETUP:
+  ------------
+    2023-11-14: 2U (Bull)    O=$440.38 H=$450.06 L=$439.92 C=$449.26
+    2023-11-15: 2U (Bull)    O=$449.36 H=$451.76 L=$448.80 C=$449.38
+    2023-11-16: 2D (Bear)    O=$449.36 H=$450.85 L=$448.12 C=$450.38
+  
+  TRADE DETAILS:
+  --------------
+  Entry Date:       2023-11-16
+  Entry Price:      $449.93
+  Stop Loss:        $450.85
+  Target:           $438.42
+  TFC Score:        0.80 (4-timeframe: H+D+W+M)
+  
+  EXIT DETAILS:
+  -------------
+  Exit Date:        2023-11-17
+  Exit Bar Type:    2U (Bullish)
+  Exit Price:       $450.70
+  Exit Reason:      Reversal (2U bar)
+  Days Held:        1
+  
+  RESULT:
+  -------
+  P&L:              $-382.24 (-0.37%)
+  Status:           LOSS
+
+Trade #4: LONG - 2-1-2
+--------------------------------------------------------------------------------
+  ENTRY SETUP:
+  ------------
+    2023-12-15: 2D (Bear)    O=$471.69 H=$472.58 L=$468.44 C=$470.00
+    2023-12-16: 1 (Inside)   O=$470.00 H=$470.10 L=$469.94 C=$470.10
+    2023-12-18: 2U (Bull)    O=$470.61 H=$472.98 L=$470.01 C=$471.79
+  
+  TRADE DETAILS:
+  --------------
+  Entry Date:       2023-12-18
+  Entry Price:      $472.26
+  Stop Loss:        $469.94
+  Target:           $472.58
+  TFC Score:        0.95 (4-timeframe: H+D+W+M)
+  
+  EXIT DETAILS:
+  -------------
+  Exit Date:        2024-01-02
+  Exit Bar Type:    2D (Bearish)
+  Exit Price:       $472.20
+  Exit Reason:      Reversal (2D bar)
+  Days Held:        15
+  
+  RESULT:
+  -------
+  P&L:              $-219.03 (-0.21%)
+  Status:           LOSS
+
+Trade #5: SHORT - 2-1-2
+--------------------------------------------------------------------------------
+  ENTRY SETUP:
+  ------------
+    2024-01-12: 2U (Bull)    O=$476.07 H=$478.60 L=$474.17 C=$475.75
+    2024-01-13: 1 (Inside)   O=$475.78 H=$475.86 L=$475.65 C=$475.65
+    2024-01-16: 2D (Bear)    O=$474.25 H=$476.61 L=$473.06 C=$475.10
+  
+  TRADE DETAILS:
+  --------------
+  Entry Date:       2024-01-16
+  Entry Price:      $474.62
+  Stop Loss:        $475.86
+  Target:           $474.17
+  TFC Score:        0.80 (4-timeframe: H+D+W+M)
+  
+  EXIT DETAILS:
+  -------------
+  Exit Date:        2024-01-18
+  Exit Bar Type:    2U (Bullish)
+  Exit Price:       $477.36
+  Exit Reason:      Reversal (2U bar)
+  Days Held:        2
+  
+  RESULT:
+  -------
+  P&L:              $-794.08 (-0.78%)
+  Status:           LOSS
+
+Trade #6: SHORT - 2-1-2
+--------------------------------------------------------------------------------
+  ENTRY SETUP:
+  ------------
+    2024-03-08: 2U (Bull)    O=$514.95 H=$518.22 L=$511.13 C=$511.72
+    2024-03-09: 1 (Inside)   O=$511.72 H=$511.82 L=$511.61 C=$511.64
+    2024-03-11: 2D (Bear)    O=$511.30 H=$512.69 L=$508.50 C=$512.69
+  
+  TRADE DETAILS:
+  --------------
+  Entry Date:       2024-03-11
+  Entry Price:      $512.18
+  Stop Loss:        $511.82
+  Target:           $511.13
+  TFC Score:        0.80 (4-timeframe: H+D+W+M)
+  
+  EXIT DETAILS:
+  -------------
+  Exit Date:        2024-03-12
+  Exit Bar Type:    2U (Bullish)
+  Exit Price:       $517.53
+  Exit Reason:      Reversal (2U bar)
+  Days Held:        1
+  
+  RESULT:
+  -------
+  P&L:              $-1264.38 (-1.25%)
+  Status:           LOSS
+
+Trade #7: SHORT - 2-2
+--------------------------------------------------------------------------------
+  ENTRY SETUP:
+  ------------
+    2024-05-06: 2U (Bull)    O=$511.93 H=$516.63 L=$511.68 C=$516.45
+    2024-05-07: 2U (Bull)    O=$516.35 H=$518.57 L=$516.20 C=$517.32
+    2024-05-08: 2D (Bear)    O=$517.37 H=$517.74 L=$514.98 C=$516.99
+  
+  TRADE DETAILS:
+  --------------
+  Entry Date:       2024-05-08
+  Entry Price:      $516.47
+  Stop Loss:        $517.74
+  Target:           $505.86
+  TFC Score:        0.50 (4-timeframe: H+D+W+M)
+  
+  EXIT DETAILS:
+  -------------
+  Exit Date:        2024-05-09
+  Exit Bar Type:    2U (Bullish)
+  Exit Price:       $521.08
+  Exit Reason:      Reversal (2U bar)
+  Days Held:        1
+  
+  RESULT:
+  -------
+  P&L:              $-1095.73 (-1.09%)
+  Status:           LOSS
+
+Trade #8: SHORT - 2-2
+--------------------------------------------------------------------------------
+  ENTRY SETUP:
+  ------------
+    2024-05-15: 2U (Bull)    O=$523.50 H=$530.31 L=$523.12 C=$530.18
+    2024-05-16: 2U (Bull)    O=$530.80 H=$531.52 L=$528.24 C=$528.71
+    2024-05-17: 2D (Bear)    O=$528.80 H=$529.70 L=$527.32 C=$529.60
+  
+  TRADE DETAILS:
+  --------------
+  Entry Date:       2024-05-17
+  Entry Price:      $529.07
+  Stop Loss:        $529.70
+  Target:           $518.18
+  TFC Score:        0.50 (4-timeframe: H+D+W+M)
+  
+  EXIT DETAILS:
+  -------------
+  Exit Date:        2024-05-20
+  Exit Bar Type:    2U (Bullish)
+  Exit Price:       $530.43
+  Exit Reason:      Reversal (2U bar)
+  Days Held:        3
+  
+  RESULT:
+  -------
+  P&L:              $-453.35 (-0.46%)
+  Status:           LOSS
+
+Trade #9: LONG - 2-2
+--------------------------------------------------------------------------------
+  ENTRY SETUP:
+  ------------
+    2024-07-18: 2D (Bear)    O=$558.27 H=$559.52 L=$550.43 C=$553.60
+    2024-07-19: 2D (Bear)    O=$551.62 H=$554.33 L=$547.91 C=$549.05
+    2024-07-22: 2U (Bull)    O=$550.51 H=$555.27 L=$550.17 C=$554.28
+  
+  TRADE DETAILS:
+  --------------
+  Entry Date:       2024-07-22
+  Entry Price:      $554.83
+  Stop Loss:        $550.17
+  Target:           $564.18
+  TFC Score:        0.80 (4-timeframe: H+D+W+M)
+  
+  EXIT DETAILS:
+  -------------
+  Exit Date:        2024-07-24
+  Exit Bar Type:    2D (Bearish)
+  Exit Price:       $541.92
+  Exit Reason:      Reversal (2D bar)
+  Days Held:        2
+  
+  RESULT:
+  -------
+  P&L:              $-2492.91 (-2.53%)
+  Status:           LOSS
+
+Trade #10: SHORT - 2-2
+--------------------------------------------------------------------------------
+  ENTRY SETUP:
+  ------------
+    2024-09-18: 2U (Bull)    O=$563.27 H=$568.69 L=$560.83 C=$565.00
+    2024-09-19: 2U (Bull)    O=$567.22 H=$572.88 L=$566.22 C=$570.25
+    2024-09-20: 2D (Bear)    O=$568.99 H=$569.31 L=$565.17 C=$568.15
+  
+  TRADE DETAILS:
+  --------------
+  Entry Date:       2024-09-20
+  Entry Price:      $567.58
+  Stop Loss:        $569.31
+  Target:           $560.79
+  TFC Score:        0.50 (4-timeframe: H+D+W+M)
+  
+  EXIT DETAILS:
+  -------------
+  Exit Date:        2024-09-23
+  Exit Bar Type:    2U (Bullish)
+  Exit Price:       $569.87
+  Exit Reason:      Reversal (2U bar)
+  Days Held:        3
+  
+  RESULT:
+  -------
+  P&L:              $-580.56 (-0.60%)
+  Status:           LOSS
+
+Trade #11: SHORT - 2-1-2
+--------------------------------------------------------------------------------
+  ENTRY SETUP:
+  ------------
+    2025-01-24: 2U (Bull)    O=$609.15 H=$610.78 L=$606.80 C=$607.55
+    2025-01-25: 1 (Inside)   O=$607.55 H=$607.64 L=$607.40 C=$607.49
+    2025-01-27: 2D (Bear)    O=$598.78 H=$602.30 L=$589.75 C=$599.91
+  
+  TRADE DETAILS:
+  --------------
+  Entry Date:       2025-01-27
+  Entry Price:      $599.31
+  Stop Loss:        $607.64
+  Target:           $606.80
+  TFC Score:        0.50 (4-timeframe: H+D+W+M)
+  
+  EXIT DETAILS:
+  -------------
+  Exit Date:        2025-01-28
+  Exit Bar Type:    2U (Bullish)
+  Exit Price:       $604.20
+  Exit Reason:      Reversal (2U bar)
+  Days Held:        1
+  
+  RESULT:
+  -------
+  P&L:              $-972.73 (-1.02%)
+  Status:           LOSS
+
+Trade #12: SHORT - 2-2
+--------------------------------------------------------------------------------
+  ENTRY SETUP:
+  ------------
+    2025-03-14: 2U (Bull)    O=$554.68 H=$563.83 L=$554.23 C=$562.08
+    2025-03-17: 2U (Bull)    O=$559.83 H=$569.71 L=$559.18 C=$566.98
+    2025-03-18: 2D (Bear)    O=$565.93 H=$567.30 L=$559.06 C=$561.20
+  
+  TRADE DETAILS:
+  --------------
+  Entry Date:       2025-03-18
+  Entry Price:      $560.64
+  Stop Loss:        $567.30
+  Target:           $549.68
+  TFC Score:        0.95 (4-timeframe: H+D+W+M)
+  
+  EXIT DETAILS:
+  -------------
+  Exit Date:        2025-03-19
+  Exit Bar Type:    2U (Bullish)
+  Exit Price:       $569.27
+  Exit Reason:      Reversal (2U bar)
+  Days Held:        1
+  
+  RESULT:
+  -------
+  P&L:              $-1647.88 (-1.74%)
+  Status:           LOSS
+
+Trade #13: SHORT - 2-2
+--------------------------------------------------------------------------------
+  ENTRY SETUP:
+  ------------
+    2025-08-12: 2U (Bull)    O=$636.68 H=$643.10 L=$635.14 C=$643.06
+    2025-08-13: 2U (Bull)    O=$643.55 H=$646.19 L=$642.57 C=$644.72
+    2025-08-14: 2D (Bear)    O=$644.56 H=$645.62 L=$641.40 C=$645.16
+  
+  TRADE DETAILS:
+  --------------
+  Entry Date:       2025-08-14
+  Entry Price:      $644.51
+  Stop Loss:        $645.62
+  Target:           $634.66
+  TFC Score:        0.50 (4-timeframe: H+D+W+M)
+  
+  EXIT DETAILS:
+  -------------
+  Exit Date:        2025-08-15
+  Exit Bar Type:    2U (Bullish)
+  Exit Price:       $643.87
+  Exit Reason:      Reversal (2U bar)
+  Days Held:        1
+  
+  RESULT:
+  -------
+  P&L:              $-93.25 (-0.10%)
+  Status:           LOSS
+
+
+============================================================
+TEST COMPLETE
+============================================================

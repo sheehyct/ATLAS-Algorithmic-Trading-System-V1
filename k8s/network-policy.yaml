@@ -1,0 +1,270 @@
+# ============================================================================
+# STRAT Trading System - Network Security Policies
+# ============================================================================
+# Network isolation and micro-segmentation for zero-trust security
+# Implements least-privilege networking principles
+# ============================================================================
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: strat-app-network-policy
+  namespace: strat-trading
+  labels:
+    app.kubernetes.io/name: strat-app
+    app.kubernetes.io/component: security
+    app.kubernetes.io/part-of: strat-trading-system
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: strat-app
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow ingress from dashboard
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: strat-dashboard
+    ports:
+    - protocol: TCP
+      port: 8000
+    - protocol: TCP
+      port: 8001
+  # Allow ingress from monitoring
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: prometheus
+    ports:
+    - protocol: TCP
+      port: 8000
+  egress:
+  # Allow egress to database
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: strat-postgres
+    ports:
+    - protocol: TCP
+      port: 5432
+  # Allow egress to cache
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: strat-redis
+    ports:
+    - protocol: TCP
+      port: 6379
+  # Allow egress to external APIs (Alpaca, AlphaVantage)
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 443
+  # DNS resolution
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    ports:
+    - protocol: UDP
+      port: 53
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: strat-dashboard-network-policy
+  namespace: strat-trading
+  labels:
+    app.kubernetes.io/name: strat-dashboard
+    app.kubernetes.io/component: security
+    app.kubernetes.io/part-of: strat-trading-system
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: strat-dashboard
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow ingress from load balancer/ingress
+  - from: []
+    ports:
+    - protocol: TCP
+      port: 8501
+  egress:
+  # Allow egress to main app
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: strat-app
+    ports:
+    - protocol: TCP
+      port: 8000
+    - protocol: TCP
+      port: 8001
+  # DNS resolution
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    ports:
+    - protocol: UDP
+      port: 53
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: strat-database-network-policy
+  namespace: strat-trading
+  labels:
+    app.kubernetes.io/name: strat-postgres
+    app.kubernetes.io/component: security
+    app.kubernetes.io/part-of: strat-trading-system
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: strat-postgres
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow ingress only from main app
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: strat-app
+    ports:
+    - protocol: TCP
+      port: 5432
+  # Allow ingress from monitoring for health checks
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: prometheus
+    ports:
+    - protocol: TCP
+      port: 5432
+  egress:
+  # DNS resolution only
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    ports:
+    - protocol: UDP
+      port: 53
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: strat-cache-network-policy
+  namespace: strat-trading
+  labels:
+    app.kubernetes.io/name: strat-redis
+    app.kubernetes.io/component: security
+    app.kubernetes.io/part-of: strat-trading-system
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: strat-redis
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow ingress only from main app
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: strat-app
+    ports:
+    - protocol: TCP
+      port: 6379
+  # Allow ingress from monitoring for health checks
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: prometheus
+    ports:
+    - protocol: TCP
+      port: 6379
+  egress:
+  # DNS resolution only
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    ports:
+    - protocol: UDP
+      port: 53
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: strat-monitoring-network-policy
+  namespace: strat-trading
+  labels:
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/component: security
+    app.kubernetes.io/part-of: strat-trading-system
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: prometheus
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow ingress from Grafana
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: grafana
+    ports:
+    - protocol: TCP
+      port: 9090
+  # Allow ingress from external monitoring
+  - from: []
+    ports:
+    - protocol: TCP
+      port: 9090
+  egress:
+  # Allow egress to all pods for metrics collection
+  - to:
+    - podSelector: {}
+    ports:
+    - protocol: TCP
+      port: 8000
+    - protocol: TCP
+      port: 5432
+    - protocol: TCP
+      port: 6379
+  # DNS resolution
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    ports:
+    - protocol: UDP
+      port: 53
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: strat-trading
+  labels:
+    app.kubernetes.io/component: security
+    app.kubernetes.io/part-of: strat-trading-system
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+  # No rules specified = deny all traffic

@@ -1,0 +1,299 @@
+# ============================================================================
+# STRAT Trading System - Docker Compose Configuration
+# ============================================================================
+# Production-ready orchestration with monitoring, logging, and scaling
+# Supports multiple environments: development, staging, production
+# ============================================================================
+
+version: '3.8'
+
+services:
+  # ============================================================================
+  # Main Application Service
+  # ============================================================================
+  strat-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+      args:
+        BUILD_DATE: ${BUILD_DATE:-}
+        VCS_REF: ${VCS_REF:-}
+        VERSION: ${VERSION:-latest}
+    image: strat-trading:${VERSION:-latest}
+    container_name: strat-app
+    restart: unless-stopped
+    environment:
+      - STRAT_ENVIRONMENT=${STRAT_ENVIRONMENT:-production}
+      - STRAT_LOG_LEVEL=${STRAT_LOG_LEVEL:-INFO}
+      - STRAT_SECURITY_MODE=strict
+      - ALPACA_API_KEY=${ALPACA_API_KEY}
+      - ALPACA_API_SECRET=${ALPACA_API_SECRET}
+      - ALPACA_BASE_URL=${ALPACA_BASE_URL:-https://paper-api.alpaca.markets}
+      - ALPHAVANTAGE_API_KEY=${ALPHAVANTAGE_API_KEY}
+      - POSTGRES_HOST=strat-db
+      - REDIS_HOST=strat-cache
+      - PROMETHEUS_HOST=strat-prometheus
+    ports:
+      - "${STRAT_APP_PORT:-8000}:8000"
+      - "${STRAT_API_PORT:-8001}:8001"
+    volumes:
+      - strat-logs:/app/logs
+      - strat-data:/app/data
+      - strat-cache:/app/cache
+      - strat-results:/app/backtest_results
+      - ./config:/app/config:ro
+    depends_on:
+      strat-db:
+        condition: service_healthy
+      strat-cache:
+        condition: service_healthy
+    networks:
+      - strat-network
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'
+          memory: 8G
+        reservations:
+          cpus: '2.0'
+          memory: 4G
+    healthcheck:
+      test: ["CMD", "python", "/app/healthcheck.py"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # ============================================================================
+  # Dashboard Service
+  # ============================================================================
+  strat-dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    image: strat-trading:${VERSION:-latest}
+    container_name: strat-dashboard
+    restart: unless-stopped
+    environment:
+      - STRAT_ENVIRONMENT=${STRAT_ENVIRONMENT:-production}
+      - STRAT_LOG_LEVEL=${STRAT_LOG_LEVEL:-INFO}
+      - STREAMLIT_SERVER_PORT=8501
+      - STREAMLIT_SERVER_ADDRESS=0.0.0.0
+      - STREAMLIT_SERVER_ENABLE_CORS=false
+      - STREAMLIT_SERVER_ENABLE_XSRF_PROTECTION=true
+    ports:
+      - "${STRAT_DASHBOARD_PORT:-8501}:8501"
+    volumes:
+      - strat-logs:/app/logs:ro
+      - strat-data:/app/data:ro
+      - strat-results:/app/backtest_results:ro
+    depends_on:
+      strat-app:
+        condition: service_healthy
+    networks:
+      - strat-network
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
+    command: ["streamlit", "run", "dashboards/unified_dashboard.py", "--server.port=8501", "--server.address=0.0.0.0"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # ============================================================================
+  # Database Service
+  # ============================================================================
+  strat-db:
+    image: postgres:16-alpine
+    container_name: strat-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-strat_trading}
+      POSTGRES_USER: ${POSTGRES_USER:-stratuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - strat-postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - strat-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-stratuser} -d ${POSTGRES_DB:-strat_trading}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ============================================================================
+  # Cache Service (Redis)
+  # ============================================================================
+  strat-cache:
+    image: redis:7-alpine
+    container_name: strat-cache
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 1gb --maxmemory-policy allkeys-lru
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - strat-redis-data:/data
+    networks:
+      - strat-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ============================================================================
+  # Monitoring Services
+  # ============================================================================
+  strat-prometheus:
+    image: prom/prometheus:v2.47.0
+    container_name: strat-prometheus
+    restart: unless-stopped
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - strat-prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.enable-lifecycle'
+    networks:
+      - strat-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+
+  strat-grafana:
+    image: grafana/grafana:10.1.0
+    container_name: strat-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: false
+      GF_SECURITY_SECRET_KEY: ${GRAFANA_SECRET_KEY}
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    volumes:
+      - strat-grafana-data:/var/lib/grafana
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./docker/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - strat-prometheus
+    networks:
+      - strat-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 512M
+
+  # ============================================================================
+  # Logging Service
+  # ============================================================================
+  strat-log-aggregator:
+    image: fluent/fluent-bit:2.1.8
+    container_name: strat-log-aggregator
+    restart: unless-stopped
+    volumes:
+      - strat-logs:/app/logs:ro
+      - ./docker/fluent-bit/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf:ro
+    depends_on:
+      - strat-app
+    networks:
+      - strat-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+
+# ============================================================================
+# Networks Configuration
+# ============================================================================
+networks:
+  strat-network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.0.0/16
+
+# ============================================================================
+# Volumes Configuration
+# ============================================================================
+volumes:
+  strat-logs:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${PWD}/docker/volumes/logs
+      o: bind
+  strat-data:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${PWD}/docker/volumes/data
+      o: bind
+  strat-cache:
+    driver: local
+  strat-results:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${PWD}/docker/volumes/results
+      o: bind
+  strat-postgres-data:
+    driver: local
+  strat-redis-data:
+    driver: local
+  strat-prometheus-data:
+    driver: local
+  strat-grafana-data:
+    driver: local
