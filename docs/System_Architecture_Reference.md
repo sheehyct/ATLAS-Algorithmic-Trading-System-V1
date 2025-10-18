@@ -1,11 +1,12 @@
-# System Architecture Reference: Algorithmic Trading Platform
+# ATLAS System Architecture Reference
 ## Development Guide for Implementation
 
-**Document Purpose**: This is the definitive reference for the complete algorithmic trading system architecture. All development work should align with the patterns, structures, and requirements defined in this document.
+**Document Purpose**: This is the definitive reference for the ATLAS (Adaptive Trading with Layered Asset System) architecture. All development work should align with the patterns, structures, and requirements defined in this document.
 
-**Target Audience**: Claude Code (AI development agent)  
-**Version**: 1.0  
+**Target Audience**: Development Team (Quantitative Developers)
+**Version**: 1.0
 **Last Updated**: October 2025
+**System**: ATLAS Algorithmic Trading System
 
 ---
 
