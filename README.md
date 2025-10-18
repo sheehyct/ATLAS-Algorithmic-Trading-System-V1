@@ -1,221 +1,244 @@
-# STRAT Algorithmic Trading System
+# ATLAS - Adaptive Trading with Layered Asset System
 
-A professional algorithmic trading system implementing the STRAT methodology for pattern-based market analysis and automated trade execution.
+A professional quantitative trading system implementing portfolio-level risk management across multiple uncorrelated strategies.
 
 ## Overview
 
-This system provides a complete implementation of the STRAT trading methodology, integrating pattern detection, multi-timeframe analysis, and backtesting capabilities using VectorBT Pro and Alpaca Markets data.
+ATLAS is a multi-strategy algorithmic trading platform designed for institutional-grade portfolio management. The system implements five uncorrelated strategies with comprehensive risk controls, walk-forward validation, and professional position sizing.
 
-### Key Features
+### Core Philosophy
 
-- **STRAT Pattern Detection**: Automated identification of 2-1-2, 3-1-2, 2-2 reversals, and Rev STRAT patterns
-- **Bar Classification**: Accurate classification of price action into inside bars (1), directional bars (2U/2D), and outside bars (3)
-- **Multi-Timeframe Analysis**: Full Time Frame Continuity (TFC) scoring across hourly, daily, weekly, and monthly timeframes
-- **Market Hours Filtering**: Strict NYSE regular trading hours filtering with holiday calendar integration
-- **Backtesting Engine**: Integration with VectorBT Pro for high-performance strategy validation
-- **Real-Time Data**: Alpaca Markets API integration for historical and live market data
+- **Expectancy over win rate**: Focus on mathematical edge rather than prediction accuracy
+- **Portfolio-level orchestration**: Coordinated risk management across all strategies
+- **Professional risk controls**: Multiple risk layers (position sizing, portfolio heat, circuit breakers)
+- **Validation-first development**: No strategy deploys without walk-forward validation
 
-## System Architecture
+### Architecture
 
-### Core Components
+```
+Portfolio Manager (Orchestration)
+    |
+    +-- Strategy 1: GMM Regime Detection
+    +-- Strategy 2: Five-Day Washout Mean Reversion
+    +-- Strategy 3: Opening Range Breakout
+    +-- Strategy 4: Pairs Trading
+    +-- Strategy 5: Semi-Volatility Momentum Portfolio
+    |
+Risk Management Layer
+    +-- Position Sizing (ATR-based with capital constraints)
+    +-- Portfolio Heat Management (6-8% exposure limit)
+    +-- Circuit Breakers (drawdown limits)
+    |
+Data Management
+    +-- Multi-Timeframe Alignment
+    +-- Market Hours Filtering
+    +-- Data Quality Validation
+```
 
-**core/analyzer.py**
-- STRATAnalyzer class for bar classification and pattern detection
-- Governing range tracking for consecutive inside bars
-- Directional pattern identification with confidence scoring
+## Current Implementation Status
 
-**core/components.py**
-- PivotDetector for key price level identification
-- InsideBarTracker for multi-bar inside bar sequences
-- PatternStateMachine for trade state management
+### Completed (Phase 0)
+- Position sizing with capital constraints (Gate 1 validated)
+- Opening Range Breakout strategy implementation
+- VectorBT Pro integration for backtesting
+- OpenAI API integration for advanced analytics
+- Comprehensive research documentation
 
-**core/triggers.py**
-- Intrabar trigger detection for precise entry timing
-- Stop loss and target price calculation
+### In Progress (Phase 1)
+- BaseStrategy abstract class implementation
+- RiskManager with portfolio heat management
+- ORB strategy refactor to inherit BaseStrategy
 
-### Data Management
+### Planned (Phase 2-3)
+- GMM Regime Detection (highest priority)
+- Five-Day Washout Mean Reversion
+- Portfolio Manager for multi-strategy coordination
+- Walk-forward validation framework
 
-**data/alpaca.py**
-- Alpaca Markets API integration
-- Historical OHLCV data fetching with adjustment handling
-- Market hours validation and filtering
+## Technology Stack
 
-**data/mtf_manager.py**
-- Multi-timeframe data resampling (5min, 15min, 1H, 1D, 1W, 1M)
-- Market-aligned hourly bars (9:30 AM, 10:30 AM, etc.)
-- Eastern timezone handling with DST support
+### Core Framework
+- **VectorBT Pro**: Backtesting engine with vectorized operations
+- **Alpaca API**: Market data and paper trading execution
+- **Python 3.12+**: Modern Python with type hints
+- **UV**: Fast dependency management
 
-### Trading Signals
-
-**trading/strat_signals.py**
-- Signal generation from detected patterns
-- Entry, stop loss, and target price calculation
-- Pattern confidence blending (TFC + analyzer)
-- Exit logic for reversals and target achievement
-
-## Dependencies
-
-This project uses UV for dependency management and requires Python 3.12+.
-
-### Core Dependencies
-- **vectorbtpro**: High-performance backtesting and portfolio analytics
-- **alpaca-py**: Alpaca Markets API client
-- **pandas**: Data manipulation and analysis
-- **pandas-market-calendars**: NYSE market hours and holiday calendar
-- **numpy**: Numerical computing
-- **python-dotenv**: Environment variable management
-
-### Visualization & Analysis
-- **matplotlib**: Chart generation
-- **plotly**: Interactive visualizations
-- **seaborn**: Statistical data visualization
-- **dash**: Dashboard framework
-- **streamlit**: Web application framework
+### Analytics & ML
+- **TA-Lib**: Technical indicators (150+ functions)
+- **scikit-learn**: Machine learning (GMM, StandardScaler)
+- **statsmodels**: Statistical analysis (cointegration for pairs trading)
+- **OpenAI API**: Advanced analytics and embeddings
 
 ### Development Tools
-- **pytest**: Testing framework
-- **black**: Code formatting
-- **ruff**: Fast Python linter
+- **pytest**: Comprehensive testing framework
+- **ruff**: Fast Python linter and formatter
 - **mypy**: Static type checking
+- **pandas-market-calendars**: Market hours validation
+
+## Key Features
+
+### Position Sizing
+- ATR-based stop losses with capital constraints
+- Proven mathematical formula (Gate 1 validated)
+- Never exceeds 100% of available capital
+- VectorBT Pro compatible return formats
+
+### Portfolio Heat Management
+- Tracks total exposure across all strategies
+- Hard limit of 6-8% portfolio heat
+- Rejects signals when at exposure limit
+- Multi-position risk aggregation
+
+### Regime Detection
+- Gaussian Mixture Model classification
+- Yang-Zhang volatility + SMA crossover features
+- Walk-forward training (refit quarterly)
+- Reduces drawdown by 50%+ in validation
+
+### Opening Range Breakout
+- 30-minute opening range with volume confirmation (2.0x threshold)
+- ATR-based stops (2.5x multiplier)
+- Directional bias filter (close > open)
+- Target Sharpe >2.0, R:R >3:1
 
 ## Project Structure
 
 ```
-vectorbt-workspace/
-├── core/               # STRAT methodology implementation
-│   ├── analyzer.py     # Pattern detection and bar classification
-│   ├── components.py   # Trading components
-│   └── triggers.py     # Entry/exit trigger detection
-├── data/               # Data management
-│   ├── alpaca.py       # Market data fetching
-│   └── mtf_manager.py  # Multi-timeframe manager
-├── trading/            # Signal generation
-│   └── strat_signals.py
-├── tests/              # Test suite
-│   ├── test_trading_signals.py
-│   ├── test_basic_tfc.py
-│   └── test_strat_components.py
-├── docs/               # Documentation
-│   ├── HANDOFF.md      # Current development status
-│   └── CLAUDE.md       # Development guidelines
-├── STRAT_Knowledge/    # STRAT methodology reference
-└── config/             # Configuration files (.env)
+atlas-trading-system/
+├── strategies/              # Strategy implementations
+│   ├── base_strategy.py    # Abstract base class (pending)
+│   └── orb.py              # Opening Range Breakout
+├── core/                    # Core system components
+│   ├── risk_manager.py     # Portfolio heat (pending)
+│   └── portfolio_manager.py # Multi-strategy coordination (pending)
+├── utils/                   # Utility functions
+│   └── position_sizing.py  # Position sizing (complete)
+├── data/                    # Data management
+│   ├── alpaca.py           # Alpaca API integration
+│   └── mtf_manager.py      # Multi-timeframe alignment
+├── tests/                   # Test suite
+│   ├── test_gate1_position_sizing.py  # Position sizing tests (passing)
+│   └── test_orb_quick.py              # ORB strategy tests
+├── docs/                    # Documentation
+│   ├── System_Architecture_Reference.md  # Complete architecture
+│   ├── HANDOFF.md                        # Current status
+│   └── CLAUDE.md                         # Development standards
+└── pyproject.toml           # Dependencies and configuration
 ```
 
-## Current Status
+## Installation
 
-### Validated Components
+### Prerequisites
+- Python 3.12 or higher
+- UV package manager
+- Alpaca Markets account (paper trading)
+- OpenAI API key (for advanced features)
 
-- Bar classification with governing range tracking
-- Pattern detection (2-1-2, 3-1-2, 2-2 reversals)
-- TFC continuity scoring (43.3% high-confidence alignment)
-- NYSE market hours filtering (weekends and holidays)
-- Multi-timeframe data resampling
-- VectorBT Pro portfolio integration
+### Setup
 
-### Technical Debt
+```bash
+# Clone the repository
+git clone https://github.com/sheehyct/ATLAS-Algorithmic-Trading-System-V1.git
+cd ATLAS-Algorithmic-Trading-System-V1
 
-**Priority 1: Stop/Target Price Calculation**
-- Current implementation produces incorrect entry and target prices for 2-1-2 patterns
-- Index calculation in `_validate_and_create_signal()` requires verification
-- Affects trade performance and win rate accuracy
+# Install dependencies with UV
+uv sync
 
-*Recommended Actions:*
-1. Investigate `_validate_and_create_signal()` in trading/strat_signals.py (lines 437-572)
-2. Verify analyzer methods `_analyze_212_signal()` and `_analyze_312_signal()` return correct price levels
-3. Validate index calculations (idx, idx-1, idx-2) align with pattern bar positions
-4. Test fixes against known patterns with manual OHLCV verification
-5. Ensure entry = inside bar high + $0.01, stop = inside bar low, target = outer bar high/low
+# Create .env file from template
+cp .env.template .env
 
-**Priority 2: Pattern Classification Refinement**
-- Rev STRAT patterns (1-2-2) being misclassified as 2-2 reversals
-- Pattern detection logic needs clarification on 3-bar sequences
-- Impacts signal quality and trade expectation
+# Add your API keys to .env
+# ALPACA_API_KEY=your_key_here
+# ALPACA_SECRET_KEY=your_secret_here
+# OPENAI_API_KEY=your_key_here
 
-*Recommended Actions:*
-1. Review `detect_22_reversal_pattern()` logic in core/analyzer.py
-2. Verify 3-bar sequences (1-2U-2D) are classified as Rev STRAT, not 2-2 reversals
-3. Ensure 2-2 reversals only apply to consecutive directional bars (2U->2D or 2D->2U)
-4. Add pattern validation tests for edge cases (inside bars preceding reversals)
-5. Cross-reference pattern detection with STRAT methodology documentation
+# Run tests to verify installation
+uv run pytest tests/test_gate1_position_sizing.py -v
+```
 
-**Priority 3: Exit Logic Enhancement**
-- Missing target price exit functionality
-- Currently exits only on reversals or stop loss
-- Prevents proper profit-taking at calculated targets
+## Development Standards
 
-*Recommended Actions:*
-1. Add target price tracking to signal generation
-2. Implement exit condition when price reaches calculated target
-3. Ensure VectorBT portfolio exits positions at target prices
-4. Validate target exits occur before reversal stops when applicable
-5. Test profit-taking behavior across multiple trade scenarios
+### Git Commit Messages
+- Follow conventional commits format (feat:, fix:, docs:, test:, refactor:)
+- Professional tone (no emojis, no AI signatures)
+- Explain WHAT changed and WHY
+- Reference documentation where applicable
 
-**Priority 4: Performance Validation**
-- Backtest results showing negative returns on uptrending stocks
-- Requires systematic validation after bug fixes
-- Need performance verification across multiple market conditions
+### Code Quality
+- Type hints required for all functions
+- Docstrings for all public methods
+- Unit tests required before merge
+- Code coverage minimum 80%
 
-*Recommended Actions:*
-1. Re-run backtests after Priority 1-3 fixes are implemented
-2. Test on volatile stocks (high pattern diversity) for comprehensive validation
-3. Verify winning trades are properly captured (not marked as losses)
-4. Compare backtest performance to buy-and-hold benchmark
-5. Analyze trade-by-trade results for remaining edge cases
+### Testing Requirements
+- Unit tests for all components
+- Integration tests for strategy interactions
+- Walk-forward validation before deployment
+- Paper trading minimum 6 months before live
 
-## Development Guidelines
+### Documentation
+- Update HANDOFF.md with progress
+- Document architectural decisions
+- Provide code examples
+- Cite research sources
 
-### Market Hours Rule
+## Performance Targets
 
-All data must be filtered to NYSE regular trading hours before analysis:
-- Weekdays only (Monday-Friday)
-- NYSE holiday calendar filtering
-- Prevents phantom bars on weekends/holidays
-- Critical for accurate STRAT pattern detection
+### Individual Strategy Targets
+| Strategy | Win Rate | Sharpe | Max DD | CAGR |
+|----------|----------|--------|--------|------|
+| GMM Regime | 55-65% | 0.8-1.0 | -15% | 8-12% |
+| Mean Reversion | 65-75% | 0.6-0.9 | -12% | 5-8% |
+| ORB | 15-25% | 1.5-2.5 | -25% | 15-25% |
+| Pairs Trading | 70-80% | 1.0-1.4 | -10% | 6-10% |
+| Momentum | 50-60% | 1.0-1.5 | -20% | 12-20% |
 
-### Testing Philosophy
+### Portfolio Targets (Equal Allocation)
+- Sharpe Ratio: >1.0 (excellent: >1.5)
+- Max Drawdown: <25% (excellent: <20%)
+- CAGR: 10-15% (excellent: >18%)
+- Profit Factor: >1.5 (excellent: >2.0)
 
-- Test with real market data (no synthetic data generation)
-- Validate on volatile stocks for diverse pattern detection
-- Performance metrics matter more than test pass rates
-- Always verify output correctness, not just functionality
+## Critical Success Criteria
 
-### Code Quality Standards
+Before live trading deployment:
+1. Data quality validated (no NaN, proper adjustments)
+2. Position sizing constraints enforced (Gate 1 passed)
+3. Portfolio heat never exceeds 8% (Gate 2 pending)
+4. Walk-forward validation within 30% degradation
+5. All unit tests passing (100% pass rate)
+6. Paper trading 6+ months with 100+ trades
+7. Paper performance matches backtest expectations
 
-- Brutal honesty: acknowledge unknowns and uncertainties
-- Read documentation before assuming method availability
-- Prioritize simplicity over feature addition
-- Delete redundant code rather than archiving
-- Maintain fewer than 10 core files
+## Documentation
 
-## Future Development
+- **System Architecture**: See `docs/System_Architecture_Reference.md`
+- **Current Status**: See `docs/HANDOFF.md`
+- **Development Guide**: See `docs/CLAUDE.md`
+- **Research Findings**: See `docs/research/Medium_Articles_Research_Findings.md`
+- **VectorBT Pro Docs**: See `VectorBT Pro Official Documentation/`
 
-### Planned Enhancements
+## Support and Contributing
 
-1. **Additional Pattern Types**
-   - PMG (Pivot Machine Gun) patterns
-   - Broadening formations
-   - Inside bar continuation patterns
+This is a professional quantitative trading system under active development. For questions, issues, or contributions:
 
-2. **Live Trading Integration**
-   - Alpaca paper trading connection
-   - Real-time signal generation
-   - Position management and monitoring
-
-3. **Performance Optimization**
-   - Vectorization of classification logic
-   - Parallel processing for multi-symbol analysis
-   - Memory optimization for large datasets
-
-4. **Risk Management**
-   - Position sizing algorithms
-   - Portfolio-level risk controls
-   - Drawdown management
+1. Review existing documentation in `docs/`
+2. Check System_Architecture_Reference.md for design decisions
+3. Follow development standards in CLAUDE.md
+4. Submit issues with detailed reproduction steps
+5. Pull requests must include tests and documentation
 
 ## License
 
-Private repository - All rights reserved
+See LICENSE file for details.
 
-## References
+## Disclaimer
 
-STRAT methodology developed by Rob Smith. This implementation is an independent interpretation for educational and trading purposes.
+This software is for educational and research purposes. Algorithmic trading involves substantial risk of loss. Past performance does not guarantee future results. No warranty is provided for the accuracy or profitability of this system. Use at your own risk.
+
+---
+
+**ATLAS Algorithmic Trading System**
+Version: 1.0 (Foundation Phase)
+Last Updated: October 2025
+Status: Active Development - Phase 1 (Foundation Implementation)
