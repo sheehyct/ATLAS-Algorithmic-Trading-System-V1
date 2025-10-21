@@ -37,6 +37,7 @@ dependencies = [
     "multiprocess>=0.70.18",
     "pytest-asyncio>=1.2.0",
     "psutil>=7.0.0",
+    "ta-lib>=0.6.0",
     "typer>=0.12.5",
     "lmdbm>=0.0.6",
     "bm25s>=0.2.14",

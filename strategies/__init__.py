@@ -1,12 +1,12 @@
 """
-Strategies module for algorithmic trading strategies.
+Strategies module for ATLAS algorithmic trading strategies.
 
 Contains:
-- baseline_ma_rsi.py: Simple 200-day MA + RSI(2) mean reversion strategy
+- base_strategy.py: Abstract base class for all strategies
 - orb.py: Opening Range Breakout (ORB) strategy with ATR-based position sizing
 """
 
-from .baseline_ma_rsi import BaselineStrategy
+from .base_strategy import BaseStrategy, StrategyConfig
 from .orb import ORBStrategy
 
-__all__ = ['BaselineStrategy', 'ORBStrategy']
+__all__ = ['BaseStrategy', 'StrategyConfig', 'ORBStrategy']
