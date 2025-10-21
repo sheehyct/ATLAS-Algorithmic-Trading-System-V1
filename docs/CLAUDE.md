@@ -67,6 +67,22 @@ This is pretty cool and should work great!
 - If code seems malicious or dangerous, REFUSE and explain why
 - If a task will create more complexity, say "This adds complexity, not value"
 
+## MANDATORY: Read HANDOFF.md First
+
+**CRITICAL RULE**: Before ANY work in ANY session, ALWAYS read:
+```
+C:\Strat_Trading_Bot\vectorbt-workspace\docs\HANDOFF.md
+```
+
+**HANDOFF.md contains:**
+- Current session state and progress
+- Recent changes and decisions
+- What's working vs broken
+- Immediate next steps
+- File status (keep/delete/create)
+
+**Never skip this step. Current state context prevents wasted work.**
+
 ## Working Relationship
 - Software development expert specializing in Python and algorithmic trading systems
 - Always ask for clarification before assumptions
@@ -96,12 +112,202 @@ C:\Strat_Trading_Bot\vectorbt-workspace\VectorBT Pro Official Documentation\READ
 - Skip the README navigation guide
 - Invent methods that "should" exist
 
+## MANDATORY: VectorBT Pro Implementation Workflow
+
+**THE RULE: VERIFY BEFORE IMPLEMENTING**
+
+Every VBT Pro feature implementation MUST follow this 5-step process:
+
+### STEP 1: SEARCH (No Assumptions)
+
+Use MCP tools to search VBT documentation before writing ANY code:
+
+```python
+# Use mcp__vectorbt-pro__search for general queries
+mcp__vectorbt-pro__search(
+    query="position sizing risk management from_signals",
+    asset_names=["examples", "api", "docs"],  # Search order matters
+    search_method="hybrid",
+    max_tokens=2000
+)
+```
+
+**Asset Types:**
+- "api" - API reference (best for specific API queries)
+- "docs" - General documentation (best for concepts)
+- "messages" - Discord discussions (best for support queries)
+- "examples" - Code examples (best for practical implementation)
+
+**Search Tips:**
+- Use 2-4 substantive keywords
+- Start with "hybrid" search method
+- Check examples first, then API docs
+- Don't include "VectorBT Pro" in query (implied)
+
+### STEP 2: VERIFY API (Exact Methods)
+
+Verify that classes and methods actually exist:
+
+```python
+# Verify references are valid
+mcp__vectorbt-pro__resolve_refnames(
+    refnames=["vbt.Portfolio", "vbt.PF", "vbt.Portfolio.from_signals"]
+)
+
+# Output format:
+# OK vbt.Portfolio vectorbtpro.portfolio.base.Portfolio
+# OK vbt.PF vectorbtpro.portfolio.base.Portfolio
+# OK vbt.Portfolio.from_signals vectorbtpro.portfolio.base.Portfolio.from_signals
+```
+
+**List available methods:**
+
+```python
+# See what's available on a class
+mcp__vectorbt-pro__get_attrs(
+    refname="vbt.Portfolio",
+    own_only=False,
+    incl_types=True,
+    incl_private=False
+)
+
+# Look for:
+# - from_signals [classmethod]
+# - total_return [property]
+# - sharpe_ratio [property]
+```
+
+### STEP 3: FIND EXAMPLES (Real Usage)
+
+Find how others use the API:
+
+```python
+# Find real-world examples
+mcp__vectorbt-pro__find(
+    refnames=["vbt.Portfolio.from_signals"],
+    asset_names=["examples", "messages"],
+    aggregate_messages=True,  # Get full thread context
+    max_tokens=2000
+)
+```
+
+**Look for patterns:**
+- How is size parameter specified? (pd.Series? np.array?)
+- What are common parameter combinations?
+- How do examples handle edge cases?
+
+### STEP 4: TEST MINIMAL EXAMPLE (Prove It Works)
+
+Test VBT integration BEFORE full implementation:
+
+```python
+# Use mcp__vectorbt-pro__run_code to test
+mcp__vectorbt-pro__run_code(
+    code="""
+import vectorbtpro as vbt
+import pandas as pd
+import numpy as np
+
+# Minimal test data
+np.random.seed(42)
+close = pd.Series(100 + np.cumsum(np.random.randn(100)))
+entries = pd.Series([True] + [False]*99)
+exits = pd.Series([False]*99 + [True])
+sizes = pd.Series([10.0]*100)
+
+# Test VBT integration
+pf = vbt.PF.from_signals(
+    close=close,
+    entries=entries,
+    exits=exits,
+    size=sizes,
+    size_type='amount',
+    init_cash=10000
+)
+
+print(f"Total Return: {pf.total_return:.2%}")
+print(f"Sharpe Ratio: {pf.sharpe_ratio:.2f}")
+print("SUCCESS: VBT accepts this format")
+""",
+    restart=False
+)
+```
+
+**CRITICAL:** If this test fails, DO NOT proceed to full implementation.
+
+### STEP 5: IMPLEMENT (Only After Verification)
+
+ONLY after steps 1-4 are complete:
+1. Write the full implementation
+2. Use the EXACT data format from step 4
+3. Add error handling for edge cases
+4. Test with real data
+
+## ENFORCEMENT
+
+**ZERO TOLERANCE for skipping this workflow.**
+
+If you skip ANY step, the implementation WILL fail and waste time debugging.
+
+**Consequences of skipping:**
+- STEP 1 skipped: Assume methods that don't exist
+- STEP 2 skipped: Use wrong method signatures
+- STEP 3 skipped: Reinvent working patterns incorrectly
+- STEP 4 skipped: Discover incompatibility after full implementation
+- STEP 5 without 1-4: 90% chance of failure
+
+## When to Consult QuantGPT
+
+If after completing steps 1-4 you are still uncertain:
+1. VBT documentation unclear or contradictory
+2. Multiple valid approaches found
+3. Edge case handling not documented
+4. Performance optimization needed
+
+**Ask specific questions with context from steps 1-4.**
+
+## Example: Implementing Position Sizing
+
+**CORRECT Workflow:**
+
+```
+1. SEARCH: "position sizing risk management from_signals"
+   Result: Found vbt.Portfolio.from_signals with size parameter
+
+2. VERIFY: mcp__vectorbt-pro__get_attrs("vbt.Portfolio.from_signals")
+   Result: size parameter exists, accepts pd.Series
+
+3. FIND: mcp__vectorbt-pro__find(["vbt.Portfolio.from_signals"], ["examples"])
+   Result: Examples show size as pd.Series of share counts
+
+4. TEST: Minimal example with pd.Series([10, 10, 10, ...])
+   Result: Works! Returns valid portfolio
+
+5. IMPLEMENT: Full position sizing with ATR calculations
+   Result: Success on first try
+```
+
+**INCORRECT Workflow (DON'T DO THIS):**
+
+```
+1. Assume vbt.Portfolio has a position_sizing parameter
+2. Write full implementation
+3. Test
+4. Get error: "position_sizing parameter doesn't exist"
+5. Search documentation to debug
+6. Rewrite implementation
+7. Test again
+8. Repeat...
+
+Result: Wasted 2 hours vs 30 minutes with correct workflow
+```
+
 ## CRITICAL: STRICT NYSE Market Hours Rule
 
 **MANDATORY FOR ALL BACKTESTS AND DATA PROCESSING:**
 
 **THE RULE:**
-ALL data MUST be filtered to NYSE regular trading hours (weekdays only, excluding holidays) BEFORE any resampling or analysis. Failure to do this creates phantom bars on weekends/holidays leading to invalid STRAT classifications and trades.
+ALL data MUST be filtered to NYSE regular trading hours (weekdays only, excluding holidays) BEFORE any resampling or analysis. Failure to do this creates phantom bars on weekends/holidays leading to invalid trades and backtests.
 
 **IMPLEMENTATION REQUIREMENTS:**
 1. Filter weekends using: `vbt.utils.calendar.is_weekday(df.index)`
@@ -113,7 +319,7 @@ ALL data MUST be filtered to NYSE regular trading hours (weekdays only, excludin
 **WHY THIS IS CRITICAL:**
 - Alpaca API can return midnight bars on Saturdays from Friday extended hours
 - Pandas resample creates phantom bars if weekends/holidays not filtered
-- Phantom bars create false STRAT patterns (e.g., 2-1-2 on Fri-Sat-Mon)
+- Phantom bars create false patterns and invalid trade signals
 - Trades executed on non-existent market days invalidate entire backtest
 - December 16, 2023 Saturday bar bug demonstrated this issue
 
@@ -132,108 +338,27 @@ assert '2023-12-25' not in daily_data.index, "Holiday bar detected!"
 dependencies = ["pandas-market-calendars>=4.0.0"]
 ```
 
-## CURRENT STATE - October 1, 2025
+## Development Standards
 
-### WORKING Components ✅
-1. **Bar Classification with Governing Range** (core/analyzer.py)
-   - Correctly tracks governing range for consecutive inside bars
-   - Distinguishes 2U (value: 2) from 2D (value: -2)
-   - Handles 1, 2U, 2D, 3 classifications
-   - VERIFIED on real SPY market data
+### Session Start Routine
 
-2. **Pattern Detection with Directional Logic** (core/analyzer.py)
-   - 2-1-2 patterns: 4 variants (2U-1-2U, 2D-1-2D, 2U-1-2D, 2D-1-2U)
-   - 3-1-2 patterns: 2 variants (3-1-2U, 3-1-2D)
-   - 2-2 reversals: 2 variants (2U→2D, 2D→2U)
-   - 3-2 patterns: 2 variants (3-2U, 3-2D)
-   - 3-2-2 patterns: 4 variants with proper directions
-
-3. **VBT Pro Integration** (All methods verified)
-   - vbt.PF.from_signals() - Portfolio creation
-   - pf.stats() - Performance metrics
-   - pf.plot() - Native visualization
-   - NO dashboard needed - VBT native plotting works
-
-4. **TFC Continuity Scoring** (tests/test_basic_tfc.py)
-   - Full Time Frame Continuity analysis WORKING
-   - Maps hourly bars to D, W, M timeframes
-   - Calculates alignment scores (FTFC, FTC, Partial, etc.)
-   - 43.3% of bars have high-confidence alignment
-
-5. **Multi-Timeframe Data Manager** (data/mtf_manager.py)
-   - Market-aligned hourly bars (9:30, 10:30, etc.)
-   - RTH-only filtering (9:30 AM - 4:00 PM ET)
-   - Eastern timezone handling with DST
-   - 6 timeframes: 5min, 15min, 1H, 1D, 1W, 1M
-
-### File Structure (CLEAN - 12 Python files)
-```
-vectorbt-workspace/
-├── core/               # 3 files - STRAT logic
-│   ├── analyzer.py     # STRATAnalyzer - bar classification & patterns
-│   ├── components.py   # PivotDetector, InsideBarTracker, PatternStateMachine
-│   └── triggers.py     # Intrabar trigger detection
-├── data/               # 2 files - Data management
-│   ├── alpaca.py       # Alpaca data fetching
-│   └── mtf_manager.py  # Multi-timeframe manager with market alignment
-├── tests/              # 3 files - All tests WORKING
-│   ├── test_strat_vbt_alpaca.py    # VBT integration test
-│   ├── test_basic_tfc.py           # TFC continuity scoring (PHASE 2 COMPLETE)
-│   └── test_strat_components.py    # Component tests
-├── trading/            # Empty - Ready for Phase 3
-├── backtest/           # Empty - Ready for backtesting
-├── config/             # Contains .env file
-├── docs/               # HANDOFF.md, CLAUDE.md
-└── pyproject.toml      # With VectorBT Pro 2025.7.27
-```
-
-## MANDATORY SESSION START CHECKLIST
-
-**STOP - Complete ALL steps BEFORE any code:**
+**MANDATORY FIRST STEPS:**
 
 ```bash
-# 1. Read HANDOFF.md FIRST - contains current state
-cat C:\Strat_Trading_Bot\vectorbt-workspace\HANDOFF.md
+# 1. Read HANDOFF.md (ALWAYS FIRST)
+cat C:\Strat_Trading_Bot\vectorbt-workspace\docs\HANDOFF.md
 
-# 2. Verify VectorBT Pro accessible (MUST USE UV RUN)
+# 2. Read CLAUDE.md (this file - refresh development rules)
+cat C:\Strat_Trading_Bot\vectorbt-workspace\docs\CLAUDE.md
+
+# 3. Verify VectorBT Pro accessible
 uv run python -c "import vectorbtpro as vbt; print(f'VBT Pro {vbt.__version__} loaded')"
 
-# 3. Test STRAT classification works
-uv run python test_strat_vbt_alpaca.py
+# 4. Check environment
+uv run python -c "import pandas as pd; import numpy as np; print('Environment OK')"
 
-# 4. Verify professional communication standards documented
-cat docs/CLAUDE.md | head -60  # Review professional standards
-
-# 5. Monitor context window (<50% warning, <70% handoff)
+# 5. Review current task from HANDOFF.md "Next Actions" section
 ```
-
-## What Was Fixed Today (October 1, 2025)
-
-1. **CRITICAL: Saturday Bar Bug** - Discovered and fixed phantom weekend/holiday bars in backtest data
-   - December 16, 2023 (Saturday) bar was creating invalid 2-1-2 patterns
-   - Implemented STRICT NYSE market hours filtering (weekdays + holidays)
-   - Added pandas-market-calendars for proper holiday filtering
-
-2. **2-2 Reversal Exit Logic** - Corrected fundamental misunderstanding
-   - OLD (WRONG): Exit on ANY single 2D bar (for longs) or 2U bar (for shorts)
-   - NEW (CORRECT): Exit only on TRUE 2-2 reversals (2U->2D for longs, 2D->2U for shorts)
-   - This allows holding through momentum continuation (2D-2D-2D)
-
-3. **Data Source Validation** - Verified Alpaca adjustment settings
-   - Using adjustment='all' for dividend+split adjusted prices
-   - Confirmed bar classifications match TradingView/ThinkOrSwim
-   - STRAT classifications are data-source agnostic (relative comparisons)
-
-4. **4-Timeframe TFC Implementation** - Re-added hourly timeframe
-   - Corrected from accidental 3-timeframe system (D+W+M) back to 4-timeframe (H+D+W+M)
-   - TFC scores now properly reflect Full Time Frame Continuity per STRAT methodology
-
-## Next Priorities
-
-1. **Multi-timeframe Continuity** - Implement D, 4H, 1H, 15M alignment checks
-2. **Additional Rev STRAT Patterns** - PMG, broadening formations, inside bar continuations
-3. **Performance Optimization** - Consider vectorizing classification (currently uses loop for correctness)
-4. **Live Trading Integration** - Connect to Alpaca for paper/live trading
 
 ## MANDATORY Quality Gates
 
@@ -247,6 +372,126 @@ Before claiming ANY functionality works:
 
 **ZERO TOLERANCE for unverified claims**
 
+## Verification Gate: Volume Confirmation
+
+**MANDATORY FOR ALL PRICE BREAKOUT STRATEGIES**
+
+All breakout strategies (ORB, range breakouts, etc.) MUST include volume confirmation.
+
+**THE RULE:**
+Entry signals require minimum 2.0x average volume threshold.
+
+**WHY THIS IS MANDATORY:**
+- Research evidence: Breakouts with 2x volume achieve ~53% success rates
+- Without volume confirmation: significantly higher failure rate
+- Reduces false signals and improves R:R ratio
+- Industry standard for professional breakout systems
+
+**IMPLEMENTATION PATTERN:**
+
+```python
+def generate_signals(self, data: pd.DataFrame) -> dict:
+    """Generate entry signals with MANDATORY volume confirmation."""
+
+    # Price breakout signal
+    price_breakout_long = data['Close'] > opening_high
+
+    # CRITICAL: Volume confirmation (MANDATORY)
+    volume_ma_20 = data['Volume'].rolling(20).mean()
+    volume_surge = data['Volume'] > (volume_ma_20 * 2.0)  # 2.0x threshold
+
+    # Entry signals (volume confirmation REQUIRED)
+    long_entries = price_breakout_long & volume_surge
+
+    return {
+        'long_entries': long_entries,
+        'volume_confirmed': volume_surge,  # Track for analysis
+        'volume_ma': volume_ma_20
+    }
+```
+
+**VERIFICATION CHECKLIST:**
+
+After backtest, verify volume confirmation is working:
+
+```python
+# Verify 100% of entries have volume confirmation
+trades = pf.trades.records_readable
+volume_confirmed_rate = trades['volume_surge'].sum() / len(trades)
+
+print(f"Volume confirmation rate: {volume_confirmed_rate:.1%}")
+assert volume_confirmed_rate >= 0.95, "Volume filter not working correctly"
+```
+
+**REJECTION CRITERIA:**
+
+If a breakout strategy does NOT include volume confirmation:
+- REJECT the implementation
+- Request addition of 2.0x volume filter
+- Re-verify after correction
+
+**NOT OPTIONAL. NOT A PARAMETER TO OPTIMIZE.**
+
+The 2.0x threshold is based on research and MUST be hardcoded.
+
+## Integration with OpenAI_VBT Development Guides
+
+The following guides provide detailed workflows for tool selection and implementation:
+
+**Tool Selection and Usage:**
+- `docs/OpenAI_VBT/RESOURCE_UTILIZATION_GUIDE.md`
+  - Decision tree: Which resource to use
+  - VBT MCP tools (search, find, get_attrs, get_source, run_code)
+  - API provider selection (OpenAI for VBT embeddings, Claude Max for dev)
+  - Filesystem operations (read HANDOFF.md first!)
+  - Project documentation hierarchy (TIER 1-4)
+
+**Practical Implementation:**
+- `docs/OpenAI_VBT/PRACTICAL_DEVELOPMENT_EXAMPLES.md`
+  - Session startup pattern (mandatory first steps)
+  - VBT API discovery workflow (6-step process)
+  - Implementing new strategy components
+  - Debugging VBT integration issues
+  - Data pipeline development
+  - Risk management implementation
+
+**Navigation:**
+- `docs/OpenAI_VBT/DEVELOPMENT_GUIDES_OVERVIEW.md`
+  - Quick reference for guide usage
+  - Integration with existing documentation
+  - Tool selection matrix
+  - Critical rules summary
+
+**CRITICAL:** These guides complement the 5-step VBT workflow above.
+
+**Workflow Integration:**
+1. Use RESOURCE_UTILIZATION_GUIDE.md decision tree to select the right tool
+2. Follow PRACTICAL_DEVELOPMENT_EXAMPLES.md for implementation patterns
+3. Reference DEVELOPMENT_GUIDES_OVERVIEW.md for quick lookups
+4. Always follow the 5-step VBT verification workflow for ANY VBT feature
+
+**Example Integration:**
+
+```
+Task: Implement ATR-based position sizing
+
+Step 1: Check RESOURCE_UTILIZATION_GUIDE.md decision tree
+        -> "Need to understand VBT API" -> Use VBT MCP tools
+
+Step 2: Follow 5-step VBT workflow (from this file)
+        -> SEARCH, VERIFY, FIND, TEST, IMPLEMENT
+
+Step 3: Reference PRACTICAL_DEVELOPMENT_EXAMPLES.md Section 3
+        -> "Implementing New Strategy Component"
+        -> Follow the 6-step pattern with code examples
+
+Step 4: Test minimal example using patterns from guides
+
+Step 5: Implement full code
+
+Result: Correct implementation on first try
+```
+
 ## Context Management
 
 ### MANDATORY Handoff Triggers
@@ -257,7 +502,7 @@ Before claiming ANY functionality works:
 
 ### File Management Policy
 - DELETE redundant files, don't archive
-- Keep <10 core files
+- Keep <15 core Python files
 - One test file per component
 - One documentation file (HANDOFF.md)
 
@@ -281,6 +526,73 @@ Before claiming ANY functionality works:
 6. Create complex solutions when simple ones exist
 7. Archive files instead of deleting them
 8. Generate synthetic market data
+9. Use emojis or special characters in ANY output
+10. Skip reading HANDOFF.md at session start
+11. NEVER skip the 5-step VBT verification workflow
+12. NEVER deliver VBT code without testing with run_code()
+13. NEVER claim something "should work" without proof
+
+## Key Reference Documents
+
+**TIER 1 - Read Every Session:**
+- `docs/HANDOFF.md` - Current state (READ FIRST)
+- `docs/CLAUDE.md` - This file (development rules)
+
+**TIER 2 - Reference When Needed:**
+- `docs/System_Architecture_Reference.md` - System design
+- `docs/OpenAI_VBT/RESOURCE_UTILIZATION_GUIDE.md` - Tool selection
+- `docs/OpenAI_VBT/PRACTICAL_DEVELOPMENT_EXAMPLES.md` - Implementation patterns
+- `VectorBT Pro Official Documentation/README.md` - VBT navigation
+
+**TIER 3 - Strategy-Specific:**
+- `docs/research/STRATEGY_2_IMPLEMENTATION_ADDENDUM.md` - ORB requirements
+- `docs/research/algo_trading_diagnostic_framework.md` - Debugging strategies
+- `docs/research/CONSOLIDATED_RESEARCH.md` - Research findings
+
+**TIER 4 - Deep Research:**
+- `docs/research/VALIDATION_PROTOCOL.md` - Testing methodology
+- `docs/research/ARCHIVE/` - Failed attempts (valuable learning)
+
+## Summary: Critical Workflows
+
+### Every Session:
+```
+1. Read HANDOFF.md (mandatory first step)
+2. Read CLAUDE.md sections 1-7 (refresh rules)
+3. Verify environment (VBT, dependencies)
+4. Check Next Actions in HANDOFF.md
+5. Plan approach (which files to modify, what to test)
+```
+
+### Every VBT Implementation:
+```
+1. SEARCH documentation (mcp__vectorbt-pro__search)
+2. VERIFY API exists (resolve_refnames, get_attrs)
+3. FIND examples (mcp__vectorbt-pro__find)
+4. TEST minimal example (mcp__vectorbt-pro__run_code)
+5. IMPLEMENT full code (only after 1-4 pass)
+6. DOCUMENT findings in HANDOFF.md
+```
+
+### Every Claim:
+```
+1. Test the code (actually run it)
+2. Verify output (check results are correct)
+3. Measure performance (back with numbers)
+4. Show evidence (paste actual output)
+5. Document in HANDOFF.md
+```
+
+### Zero Tolerance Items:
+- Emojis or special characters in ANY output
+- Skipping HANDOFF.md at session start
+- Skipping VBT verification workflow (5 steps)
+- Claiming code works without testing
+- Creating breakout strategies without volume confirmation
+- Assuming VBT methods exist without verification
 
 ---
-END OF CLAUDE.md - Updated October 1, 2025
+
+**Last Updated:** October 18, 2025 - ATLAS Project
+**Version:** 2.0 - Post-STRAT Migration
+**Status:** PRODUCTION - All STRAT references removed
