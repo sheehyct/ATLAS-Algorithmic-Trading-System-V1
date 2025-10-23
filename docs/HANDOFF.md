@@ -1,9 +1,9 @@
 # HANDOFF - ATLAS Trading System Development
 
-**Last Updated:** October 22, 2025 (Session 6 - Critical Bug Fix)
+**Last Updated:** October 22, 2025 (Session 7 - Gate 2 Risk Management)
 **Current Branch:** `main` (ATLAS production branch)
-**Phase:** Phase 2 Foundation Implementation (NOW COMPLETE)
-**Next Phase:** Phase 3 - RiskManager Implementation
+**Phase:** Phase 3 - Risk Management (Gate 2 COMPLETE)
+**Next Phase:** Phase 4 - PortfolioManager Integration
 
 ---
 
@@ -81,19 +81,27 @@ Before implementing ANY VectorBT Pro feature, MUST complete ALL 5 steps:
 - Broadcasting: Uses VBT-verified align() pattern
 - Result: 1580 bars returned (was 0 before fix)
 
+**Portfolio Heat Manager (Gate 2 - PASSED Oct 22)**
+- File: `utils/portfolio_heat.py` (277 lines)
+- Tests: `tests/test_gate2_risk_management.py` - 10/10 PASSING
+- Features: Aggregate risk tracking, pre-trade gating, 8% hard limit
+- Validation: `tests/validate_gate2.py` - PASSED
+- Result: Trades rejected when heat would exceed 8% limit
+
+**RiskManager (COMPLETE Oct 22)**
+- File: `core/risk_manager.py` (258 lines)
+- Tests: `tests/test_gate2_risk_management.py` - 8/8 PASSING
+- Features: Drawdown circuit breakers, position size validation
+- Thresholds: 10% WARNING, 15% REDUCE_SIZE, 20% STOP_TRADING
+- Result: Automatic risk reduction during drawdowns
+
 **Data Fetching**
 - Alpaca integration working (data/alpaca.py)
 - Multi-timeframe manager working (data/mtf_manager.py)
 - RTH filtering: between_time() + pandas_market_calendars
 - NYSE trading days filter: Date-only comparison (timezone-safe)
 
-### NOT IMPLEMENTED (Phase 3 Objectives)
-
-**RiskManager - NOT STARTED**
-- File: `core/risk_manager.py` (to create)
-- Purpose: Portfolio heat tracking (6-8% hard limit)
-- Features: can_take_position() gate, multi-position aggregation
-- Priority: HIGH (Gate 2 requirement)
+### NOT IMPLEMENTED (Phase 4 Objectives)
 
 **Portfolio Manager - NOT STARTED**
 - File: `core/portfolio_manager.py` (future)
@@ -106,23 +114,103 @@ Before implementing ANY VectorBT Pro feature, MUST complete ALL 5 steps:
 
 ---
 
-## Test Results Summary (Oct 21)
+## Test Results Summary (Oct 22)
 
 ```
-Component                    Tests    Status
-─────────────────────────────────────────────
-Position Sizing (Gate 1)      5/5    PASSING
-BaseStrategy Unit Tests      21/21   PASSING
-ORB Refactored Tests          5/5    PASSING
-─────────────────────────────────────────────
-TOTAL:                       31/31   PASSING
+Component                      Tests    Status
+───────────────────────────────────────────────
+Position Sizing (Gate 1)        5/5    PASSING
+BaseStrategy Unit Tests        21/21   PASSING
+ORB Refactored Tests            5/5    PASSING
+Portfolio Heat Manager (Gate 2) 10/10   PASSING
+RiskManager (Gate 2)            8/8    PASSING
+Integration Test                1/1    PASSING
+───────────────────────────────────────────────
+TOTAL:                         50/50   PASSING
 ```
 
-**All gates validated. Zero test failures.**
+**Gate 1 PASSED. Gate 2 PASSED. Zero test failures.**
 
 ---
 
 ## Recent Session Summaries
+
+### Session 7: Gate 2 Risk Management Implementation (Oct 22, 2025)
+
+**Objective:**
+Implement Layer 2 (Portfolio Heat Management) of the ATLAS risk framework to pass Gate 2 validation.
+
+**Verification Workflow Applied:**
+Before implementation, ran modified 5-step workflow to verify VBT has no built-in solution:
+1. SEARCH: "portfolio heat risk management multi position aggregate exposure tracking"
+2. VERIFY: Scanned all 400+ Portfolio methods - NO pre-trade gating found
+3. FIND: Discord messages confirm VBT maintainer states feature doesn't exist
+4. CONCLUSION: Custom implementation required (no VBT dependencies)
+5. PROCEED: Implement pure Python classes per System_Architecture_Reference.md
+
+**Components Implemented:**
+
+**PortfolioHeatManager (utils/portfolio_heat.py - 277 lines)**
+- Tracks aggregate risk across all open positions
+- Gating function: can_accept_trade() enforces 8% hard limit
+- Position management: add_position(), remove_position(), update_position_risk()
+- Heat calculation: sum(all position risks) / capital
+- Professional validation: max_heat limited to 6-10% range
+
+**RiskManager (core/risk_manager.py - 258 lines)**
+- Drawdown circuit breakers with cascading thresholds
+- 10% DD: WARNING (log only, no action)
+- 15% DD: REDUCE_SIZE (risk_multiplier = 0.5)
+- 20% DD: STOP_TRADING (trading_enabled = False)
+- Peak equity tracking and automatic recovery
+
+**Test Coverage (tests/test_gate2_risk_management.py - 400 lines)**
+- PortfolioHeatManager: 10 tests covering all scenarios
+- RiskManager: 8 tests covering circuit breakers and validation
+- Integration: 1 test combining heat + drawdown management
+- Total: 19/19 tests PASSING
+
+**Validation Results (tests/validate_gate2.py)**
+- Scenario: 5 positions attempted with 2% risk each (10% total)
+- Result: 4 positions accepted (8% heat), 5th REJECTED
+- After closing 1 position: Heat drops to 6%, new position accepted
+- Verification: Portfolio heat NEVER exceeded 8% limit
+- Conclusion: Gate 2 PASSED
+
+**Key Architectural Decision:**
+- Separated concerns: PortfolioHeatManager (aggregate position risk) vs RiskManager (realized drawdown)
+- Pure Python implementation (no VBT API dependencies)
+- Pre-trade gating (rejects before execution) vs post-trade monitoring
+- Modular design allows independent testing and future integration
+
+**Files Created:**
+- `utils/portfolio_heat.py` (277 lines)
+- `core/risk_manager.py` (258 lines)
+- `tests/test_gate2_risk_management.py` (400 lines)
+- `tests/validate_gate2.py` (100 lines)
+
+**Total:** 1,035 new lines, 0 deletions
+
+**Test Status:**
+- Previous: 31/31 PASSING
+- Added: 19/19 PASSING
+- Current: 50/50 PASSING
+
+**Gates Status:**
+- Gate 1 (Position Sizing): PASSED Oct 13-15
+- Gate 2 (Portfolio Heat): PASSED Oct 22
+- Gate 3 (Strategy Performance): Pending Phase 4 integration
+
+**Next Steps (Phase 4):**
+1. Integrate PortfolioHeatManager with PortfolioManager orchestration
+2. Implement BaseStrategy integration with heat gating
+3. Run multi-strategy backtest with heat limits enforced
+4. Validate Gate 3 (ORB performance with all gates active)
+
+**Commits:**
+- [Pending] feat: implement portfolio heat and risk management for Gate 2
+
+---
 
 ### Session 6: Critical Opening Range Broadcast Bug Fix (Oct 22, 2025)
 
@@ -270,27 +358,32 @@ vectorbt-workspace/
 
 ---
 
-## Next Actions (Phase 3 - RiskManager)
+## Next Actions (Phase 4 - PortfolioManager Integration)
 
-**Priority 1: RiskManager Implementation**
-1. Create `core/risk_manager.py` with portfolio heat tracking
-2. Implement can_take_position(proposed_risk, current_heat) -> bool
-3. 6-8% hard limit on portfolio heat
-4. Multi-position risk aggregation
-5. Create `tests/test_risk_manager.py`
-6. Gate 2 validation
+**Priority 1: PortfolioManager Implementation**
+1. Create `core/portfolio_manager.py` (multi-strategy orchestration)
+2. Integrate PortfolioHeatManager with can_take_position() gating
+3. Integrate RiskManager drawdown circuit breakers
+4. Implement capital allocation across strategies
+5. Create `tests/test_portfolio_manager.py`
 
-**Priority 2: Replace Old ORB**
+**Priority 2: BaseStrategy Heat Integration**
+1. Add heat gating to BaseStrategy.backtest() method
+2. Modify backtest to check heat before executing trades
+3. Update ORB tests to verify heat integration
+4. Document integration pattern for future strategies
+
+**Priority 3: Multi-Strategy Integration Test**
+1. Run ORB with heat limits enforced (2020-2024)
+2. Verify trades rejected at 8% heat limit
+3. Validate drawdown circuit breakers trigger correctly
+4. Document Gate 3 performance metrics (Sharpe >2.0, R:R >3:1)
+
+**Priority 4: Code Cleanup**
 1. Delete `strategies/orb.py` (old implementation)
 2. Rename `strategies/orb_refactored.py` -> `strategies/orb.py`
 3. Update all imports
 4. Delete `tests/test_orb_quick.py` (old tests)
-
-**Priority 3: System Integration Test**
-1. Run ORB with longer date range (2020-2024)
-2. Verify trades execute correctly
-3. Validate position sizes + portfolio heat gates
-4. Document performance metrics
 
 ---
 
