@@ -218,14 +218,21 @@ class ORBStrategy(BaseStrategy):
         opening_close = pd.Series(opening_close_list, index=dates)
         opening_open = pd.Series(opening_open_list, index=dates)
 
-        # Broadcast daily values to intraday bars using VBT-recommended align() method
+        # Broadcast daily values to intraday bars using map by date pattern
         # VBT-verified pattern from mcp__vectorbt-pro__search (Discord examples)
-        # Reference: "align with broadcast_axis=0, method='ffill', join='right'"
-        # This handles timezone mismatches and prevents duplicate label errors
-        opening_high_ff, _ = opening_high.align(data['Close'], broadcast_axis=0, method='ffill', join='right')
-        opening_low_ff, _ = opening_low.align(data['Close'], broadcast_axis=0, method='ffill', join='right')
-        opening_close_ff, _ = opening_close.align(data['Close'], broadcast_axis=0, method='ffill', join='right')
-        opening_open_ff, _ = opening_open.align(data['Close'], broadcast_axis=0, method='ffill', join='right')
+        # Reference: "entries.reindex(price_data.index, method='ffill')"
+        # Pattern: Create dict mapping date -> value, then map intraday dates to values
+        # This correctly handles timezone-aware indices and avoids NaN propagation
+        opening_high_dict = dict(zip(opening_high.index.date, opening_high.values))
+        opening_low_dict = dict(zip(opening_low.index.date, opening_low.values))
+        opening_close_dict = dict(zip(opening_close.index.date, opening_close.values))
+        opening_open_dict = dict(zip(opening_open.index.date, opening_open.values))
+
+        intraday_dates = pd.Series(data.index.date, index=data.index)
+        opening_high_ff = intraday_dates.map(opening_high_dict)
+        opening_low_ff = intraday_dates.map(opening_low_dict)
+        opening_close_ff = intraday_dates.map(opening_close_dict)
+        opening_open_ff = intraday_dates.map(opening_open_dict)
 
         return {
             'opening_high': opening_high_ff,
@@ -282,10 +289,10 @@ class ORBStrategy(BaseStrategy):
             )
             atr_daily = atr_indicator.real
 
-            # Forward-fill ATR to intraday bars
-            atr_intraday = atr_daily.reindex(
-                data.index.normalize(), method='ffill'
-            ).reindex(data.index, method='ffill')
+            # Forward-fill ATR to intraday bars using map by date pattern
+            atr_dict = dict(zip(atr_daily.index.date, atr_daily.values))
+            intraday_dates_atr = pd.Series(data.index.date, index=data.index)
+            atr_intraday = intraday_dates_atr.map(atr_dict)
         else:
             # Fallback: Calculate ATR from 5min data (less ideal)
             atr_indicator = vbt.talib("ATR").run(

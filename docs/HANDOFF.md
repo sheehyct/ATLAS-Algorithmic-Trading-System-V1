@@ -1,8 +1,8 @@
 # HANDOFF - ATLAS Trading System Development
 
-**Last Updated:** October 21, 2025 19:00 ET
+**Last Updated:** October 22, 2025 (Session 6 - Critical Bug Fix)
 **Current Branch:** `main` (ATLAS production branch)
-**Phase:** Phase 2 Foundation Implementation (COMPLETE)
+**Phase:** Phase 2 Foundation Implementation (NOW COMPLETE)
 **Next Phase:** Phase 3 - RiskManager Implementation
 
 ---
@@ -122,9 +122,70 @@ TOTAL:                       31/31   PASSING
 
 ---
 
-## Recent Session Summary (Oct 21, 2025)
+## Recent Session Summaries
 
-### Session 5: BaseStrategy & ORB Refactor
+### Session 6: Critical Opening Range Broadcast Bug Fix (Oct 22, 2025)
+
+**Problem Identified:**
+- ORB strategy executed 0 trades in January 2024 test period
+- Unit tests passing but strategy fundamentally broken
+- Classic "green tests, broken system" anti-pattern
+
+**Root Cause:**
+Opening range broadcast using align() pattern created ALL NaN values:
+- Pattern: `opening_high.align(data['Close'], broadcast_axis=0, method='ffill', join='right')`
+- Result: 1580 NaN values (100% of intraday bars)
+- Consequence: No price breakout signals (Close > NaN = False)
+- Consequence: No directional bias signals (NaN > NaN = False)
+
+**Diagnostic Evidence:**
+- Signal decomposition revealed 0 price breakouts and 0 directional bias signals
+- Volume filter working correctly (111 bars with 2.0x surge)
+- Time filter working correctly (1460 bars after 10:00 AM)
+- Bottleneck: Opening range values were ALL NaN after broadcast
+
+**Fix Applied (VBT 5-Step Workflow):**
+1. SEARCH: Found reindex/map patterns in VBT Discord examples
+2. VERIFY: Tested map by date pattern (standard pandas, no VBT-specific API)
+3. FIND: Confirmed pattern in multiple VBT user examples
+4. TEST: Validated with mcp__vectorbt-pro__run_code (0 NaN values)
+5. IMPLEMENT: Replaced align() with map by date pattern
+
+**New Pattern (orb_refactored.py lines 226-235):**
+```python
+# Map daily values to intraday by date
+opening_high_dict = dict(zip(opening_high.index.date, opening_high.values))
+intraday_dates = pd.Series(data.index.date, index=data.index)
+opening_high_ff = intraday_dates.map(opening_high_dict)
+```
+
+**Additional Fix:**
+- ATR reindexing had same bug (lines 293-295)
+- Applied same map by date pattern for ATR daily-to-intraday broadcast
+
+**Validation Results:**
+- January 2024: 4 trades executed (previously 0)
+- Q1 2024 (Jan-Mar): 13 trades executed
+- 31 entry signals generated in Jan 2024
+- 73 entry signals generated in Q1 2024
+
+**Files Modified:**
+- `strategies/orb_refactored.py` (opening range + ATR broadcast)
+- `tests/diagnostic_orb_jan2024.py` (signal decomposition diagnostic)
+- `tests/validate_orb_fix.py` (validation script)
+
+**Key Lesson:**
+- Unit tests must verify functional outcomes, not just code structure
+- Opening range bug passed tests because tests checked data types, not values
+- Diagnostic decomposition revealed the exact bottleneck condition
+- VBT 5-step workflow prevented implementing another broken pattern
+
+**Commits:**
+- [Pending] fix: correct opening range and ATR broadcast to use map by date pattern
+
+---
+
+### Session 5: BaseStrategy & ORB Refactor (Oct 21, 2025)
 
 **Completed:**
 1. BaseStrategy verification against System_Architecture_Reference.md spec
