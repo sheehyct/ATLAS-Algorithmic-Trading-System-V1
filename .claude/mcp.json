@@ -1,0 +1,11 @@
+﻿{
+  "mcpServers": {
+    "vectorbt-pro": {
+      "command": "C:\\Strat_Trading_Bot\\vectorbt-workspace\\.venv\\Scripts\\python.exe",
+      "args": ["-m", "vectorbtpro.mcp_server"],
+      "env": {
+        "GITHUB_TOKEN": "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"
+      }
+    }
+  }
+}
