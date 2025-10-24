@@ -1,5 +1,5 @@
 """
-Test script for refactored ORB strategy (BaseStrategy inheritance)
+Test script for ORB strategy (BaseStrategy inheritance)
 
 Tests:
 1. ORB inherits from BaseStrategy correctly
@@ -7,7 +7,7 @@ Tests:
 3. Signal generation works
 4. BaseStrategy.backtest() integration
 
-Run: uv run python tests/test_orb_refactored.py
+Run: uv run python tests/test_orb.py
 """
 
 import sys
@@ -17,7 +17,7 @@ from pathlib import Path
 workspace_root = Path(__file__).parent.parent
 sys.path.insert(0, str(workspace_root))
 
-from strategies.orb_refactored import ORBStrategy, ORBConfig
+from strategies.orb import ORBStrategy, ORBConfig
 from strategies.base_strategy import BaseStrategy
 import pandas as pd
 
