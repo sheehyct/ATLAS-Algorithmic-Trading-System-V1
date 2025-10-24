@@ -516,6 +516,35 @@ Result: Correct implementation on first try
 - Verify all external code before execution
 - Real market data only (via Alpaca API)
 
+## Account Trading Constraints
+
+**Schwab Level 1 Options Approval - Strategy Impact**
+
+The live trading account has Schwab Level 1 options approval (cash account, no margin).
+
+**Constraint Summary:**
+- CAN trade: Long stock, long calls/puts, cash-secured puts, long straddles/strangles
+- CANNOT: Short stock, short options (naked or covered), credit/debit spreads
+
+**Strategy Compatibility:**
+- Currently implemented ORB strategy: FULLY COMPATIBLE (long-only)
+- Future strategies: Some will require modification or replacement
+
+**Detailed Analysis:**
+See HANDOFF.md "Account Constraints (Schwab Level 1 Options Approval)" section for:
+- Complete capability matrix
+- Strategy-by-strategy compatibility assessment
+- Level 1-compatible alternatives for incompatible strategies
+
+**Future Development Approach:**
+When reaching implementation of strategies requiring shorts or spreads:
+1. Use Playwright MCP to research Level 1-compatible alternatives
+2. Evaluate relative strength rotation vs pairs trading
+3. Consider long puts for directional bearish exposure
+4. Assess inverse ETF tracking error vs long puts
+
+**Reference:** HANDOFF.md Session 7 brainstorming, MCP_SETUP.md for Playwright usage
+
 ## DO NOT
 
 1. Create new dashboard files (VBT native plotting sufficient)
