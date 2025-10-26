@@ -74,6 +74,7 @@ Data Management
 - **ruff**: Fast Python linter and formatter
 - **mypy**: Static type checking
 - **pandas-market-calendars**: Market hours validation
+- **OpenMemory**: Semantic memory system for queryable development context (MCP integration)
 
 ## Key Features
 
@@ -133,6 +134,7 @@ atlas-trading-system/
 - UV package manager
 - Alpaca Markets account (paper trading)
 - OpenAI API key (for advanced features)
+- OpenMemory server (optional, for development context management)
 
 ### Setup
 
@@ -154,6 +156,36 @@ cp .env.template .env
 
 # Run tests to verify installation
 uv run pytest tests/test_gate1_position_sizing.py -v
+```
+
+### Optional: OpenMemory Setup
+
+OpenMemory provides semantic search over development context (research findings, validation results, architectural decisions).
+
+**Installation:**
+```bash
+# Clone OpenMemory repository
+git clone https://github.com/CaviraOSS/OpenMemory.git C:/Dev/openmemory
+cd C:/Dev/openmemory
+
+# Install dependencies (requires Node.js and Bun)
+cd backend
+npm install --legacy-peer-deps
+
+# Configure environment
+cp .env.example .env
+# Edit .env to set OPENAI_API_KEY for embeddings
+
+# Start server
+npm run dev
+```
+
+**Claude Code Integration:**
+
+OpenMemory integrates via MCP (Model Context Protocol) for seamless access from Claude Code.
+
+See `docs/OPENMEMORY_PROCEDURES.md` for complete setup and daily operations guide.
+See `docs/OpenMemory_Integration_Guide.md` for detailed installation and configuration.
 ```
 
 ## Development Standards
