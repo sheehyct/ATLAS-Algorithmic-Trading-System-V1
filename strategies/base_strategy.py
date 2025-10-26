@@ -1,5 +1,5 @@
 """
-Base Strategy Abstract Class for ATLAS Trading System
+Base Strategy Abstract Class for ATLAS Trading System v2.0
 
 This module provides the abstract base class that all ATLAS strategies inherit from.
 Standardizes signal generation, position sizing, backtesting, and performance metrics.
@@ -8,11 +8,22 @@ Design Principles:
 - Strategies implement signal generation and position sizing logic
 - BaseStrategy handles VectorBT Pro integration and performance metrics
 - Pydantic validation ensures configuration correctness
+- Regime awareness enables adaptive capital allocation
 - VBT-compatible data formats (pd.Series with DatetimeIndex)
 
+v2.0 Enhancements:
+- Regime awareness (strategies declare compatible market regimes)
+- Universe and rebalance frequency attributes for portfolio management
+- Backward compatible with v1.0 signal formats
+
+VBT Integration: VERIFIED (Steps 1-2 complete)
+- vbt.Portfolio.from_signals: VERIFIED
+- Portfolio properties (total_return, sharpe_ratio, etc.): VERIFIED
+- Trade metrics (count, win_rate, winning, losing): VERIFIED
+
 Reference:
-- System_Architecture_Reference.md (lines 220-378)
-- VBT_POSITION_SIZING_RESEARCH.md (Phase 2 research)
+- docs/SYSTEM_ARCHITECTURE/2_DIRECTORY_STRUCTURE_AND_STRATEGY_IMPLEMENTATION.md
+- docs/ATLAS_V2_IMPLEMENTATION_PLAN.md (Phase 1.2)
 """
 
 from abc import ABC, abstractmethod
@@ -32,6 +43,9 @@ class StrategyConfig(BaseModel):
 
     Attributes:
         name: Strategy identifier (for logging/reporting)
+        universe: Trading universe ('sp500', 'russell1000', 'nasdaq100', 'custom')
+        rebalance_frequency: How often to rebalance ('daily', 'weekly', 'monthly', 'quarterly', 'semi_annual')
+        regime_compatibility: Dict mapping regime names to boolean (which regimes strategy trades in)
         risk_per_trade: Risk per trade as decimal (default: 2%)
         max_positions: Maximum concurrent positions (default: 5)
         enable_shorts: Allow short positions (default: False)
@@ -42,9 +56,24 @@ class StrategyConfig(BaseModel):
         - Risk per trade: 0.1% to 5% (professional range)
         - Max positions: 1 to 20 (prevents over-diversification)
         - Combined costs: ≤0.5% (prevents excessive friction)
+
+    v2.0 Additions:
+        - universe: Defines stock selection pool
+        - rebalance_frequency: Controls trading frequency
+        - regime_compatibility: Enables adaptive allocation
     """
 
     name: str
+    universe: str = 'sp500'
+    rebalance_frequency: str = 'daily'
+    regime_compatibility: Dict[str, bool] = Field(
+        default_factory=lambda: {
+            'TREND_BULL': True,
+            'TREND_NEUTRAL': False,
+            'TREND_BEAR': False,
+            'CRASH': False
+        }
+    )
     risk_per_trade: float = Field(default=0.02, ge=0.001, le=0.05)
     max_positions: int = Field(default=5, ge=1, le=20)
     enable_shorts: bool = False
@@ -105,9 +134,15 @@ class BaseStrategy(ABC):
 
         Raises:
             ValueError: If configuration fails validation rules
+            AssertionError: If strategy parameters fail validation
+
+        v2.0 Changes:
+            - Now calls validate_parameters() after validate_config()
+            - Ensures both StrategyConfig and strategy-specific params are valid
         """
         self.config = config
         self.validate_config()
+        self.validate_parameters()  # v2.0: Strategy-specific validation
 
     def validate_config(self) -> None:
         """
@@ -141,9 +176,74 @@ class BaseStrategy(ABC):
             )
 
     @abstractmethod
+    def validate_parameters(self) -> bool:
+        """
+        Validate strategy-specific parameters are within acceptable ranges.
+
+        Child classes must implement parameter validation logic to ensure
+        strategy parameters are sensible and prevent configuration errors.
+
+        Returns:
+            True if all parameters valid
+
+        Raises:
+            ValueError: If any parameter is outside acceptable range
+            AssertionError: If validation assertions fail
+
+        Example:
+            >>> def validate_parameters(self) -> bool:
+            ...     assert 10 <= self.lookback_period <= 50, \
+            ...         f"lookback_period {self.lookback_period} outside range [10, 50]"
+            ...     assert 0.0 < self.entry_threshold < 1.0, \
+            ...         f"entry_threshold must be between 0 and 1"
+            ...     return True
+
+        Note:
+            - Called automatically during __init__ after config validation
+            - Use assertions for clarity (will raise AssertionError)
+            - Provide helpful error messages with actual vs expected values
+        """
+        pass
+
+    def should_trade_in_regime(self, regime: str) -> bool:
+        """
+        Check if strategy should trade in the given market regime.
+
+        Uses regime_compatibility from StrategyConfig to determine if
+        strategy is appropriate for current market conditions.
+
+        Args:
+            regime: Current market regime ('TREND_BULL', 'TREND_NEUTRAL', 'TREND_BEAR', 'CRASH')
+
+        Returns:
+            True if strategy should be active in this regime
+
+        Example:
+            >>> config = StrategyConfig(
+            ...     name="52-Week High",
+            ...     regime_compatibility={
+            ...         'TREND_BULL': True,
+            ...         'TREND_NEUTRAL': True,  # Still works!
+            ...         'TREND_BEAR': False,
+            ...         'CRASH': False
+            ...     }
+            ... )
+            >>> strategy = Strategy(config)
+            >>> strategy.should_trade_in_regime('TREND_BULL')  # True
+            >>> strategy.should_trade_in_regime('TREND_BEAR')  # False
+
+        Note:
+            - Defaults to False for unknown regimes (safety first)
+            - Used by generate_signals() to filter signals by regime
+            - Portfolio manager uses this for capital allocation
+        """
+        return self.config.regime_compatibility.get(regime, False)
+
+    @abstractmethod
     def generate_signals(
         self,
-        data: pd.DataFrame
+        data: pd.DataFrame,
+        regime: Optional[str] = None
     ) -> Dict[str, pd.Series]:
         """
         Generate trading signals for the strategy.
@@ -155,28 +255,44 @@ class BaseStrategy(ABC):
             data: OHLCV DataFrame with DatetimeIndex
                 Required columns: Open, High, Low, Close, Volume
                 Index: pd.DatetimeIndex (timezone-aware recommended)
+            regime: Optional current market regime for filtering signals
+                ('TREND_BULL', 'TREND_NEUTRAL', 'TREND_BEAR', 'CRASH')
 
         Returns:
-            Dictionary containing:
-            - 'long_entries': Boolean Series for long entries (required)
-            - 'long_exits': Boolean Series for long exits (required)
+            Dictionary containing (supports both v1.0 and v2.0 formats):
+
+            v2.0 format (preferred):
+            - 'entry_signal': Boolean Series for entries (required)
+            - 'exit_signal': Boolean Series for exits (required)
+            - 'stop_distance': Float Series for stop loss distances (required)
+
+            v1.0 format (backward compatible):
+            - 'long_entries': Boolean Series for long entries
+            - 'long_exits': Boolean Series for long exits
             - 'short_entries': Boolean Series for short entries (optional)
             - 'short_exits': Boolean Series for short exits (optional)
-            - 'stop_distance': Float Series for stop loss distances (required)
+            - 'stop_distance': Float Series for stop losses
 
             All Series must have same index as input data (VBT requirement)
 
-        Example:
-            >>> def generate_signals(self, data: pd.DataFrame) -> Dict[str, pd.Series]:
-            ...     # ORB example
-            ...     opening_high = calculate_opening_range(data)
-            ...     long_entries = data['Close'] > opening_high
-            ...     long_exits = data.index.time == time(15, 55)  # EOD
+        Example (v2.0 with regime awareness):
+            >>> def generate_signals(self, data: pd.DataFrame, regime: Optional[str] = None):
+            ...     # Regime filter
+            ...     if regime and not self.should_trade_in_regime(regime):
+            ...         return {
+            ...             'entry_signal': pd.Series(False, index=data.index),
+            ...             'exit_signal': pd.Series(False, index=data.index),
+            ...             'stop_distance': pd.Series(0.0, index=data.index)
+            ...         }
+            ...
+            ...     # Strategy logic
+            ...     entry_signal = data['Close'] > data['High'].shift(1)
+            ...     exit_signal = data['Close'] < data['Low'].shift(1)
             ...     stop_distance = atr * 2.5
             ...
             ...     return {
-            ...         'long_entries': long_entries,
-            ...         'long_exits': long_exits,
+            ...         'entry_signal': entry_signal,
+            ...         'exit_signal': exit_signal,
             ...         'stop_distance': stop_distance
             ...     }
 
@@ -184,6 +300,7 @@ class BaseStrategy(ABC):
             - Use boolean Series for entry/exit signals (not 0/1)
             - Ensure all Series have aligned indexes
             - stop_distance should be in price units (dollars, not %)
+            - If regime is incompatible, return all False signals
         """
         pass
 
@@ -252,7 +369,8 @@ class BaseStrategy(ABC):
     def backtest(
         self,
         data: pd.DataFrame,
-        initial_capital: float = 10000.0
+        initial_capital: float = 10000.0,
+        regime: Optional[str] = None
     ) -> vbt.Portfolio:
         """
         Run backtest using VectorBT Pro.
@@ -262,7 +380,7 @@ class BaseStrategy(ABC):
         so child classes don't need to reimplement.
 
         Workflow:
-        1. Call child's generate_signals() to get entries/exits/stops
+        1. Call child's generate_signals() to get entries/exits/stops (with regime)
         2. Call child's calculate_position_size() to get share counts
         3. Run vbt.Portfolio.from_signals() with standard settings
         4. Return VBT Portfolio object for analysis
@@ -271,6 +389,8 @@ class BaseStrategy(ABC):
             data: OHLCV DataFrame with DatetimeIndex
                 Required columns: Open, High, Low, Close, Volume
             initial_capital: Starting capital in dollars (default: $10,000)
+            regime: Optional market regime for regime-aware strategies
+                ('TREND_BULL', 'TREND_NEUTRAL', 'TREND_BEAR', 'CRASH')
 
         Returns:
             vbt.Portfolio object with backtest results
@@ -280,7 +400,12 @@ class BaseStrategy(ABC):
             ValueError: If generate_signals() returns invalid format
 
         Example:
+            >>> # Basic backtest
             >>> pf = strategy.backtest(data, initial_capital=10000)
+            >>>
+            >>> # Regime-aware backtest (v2.0)
+            >>> pf = strategy.backtest(data, initial_capital=10000, regime='TREND_BULL')
+            >>>
             >>> print(f"Total Return: {pf.total_return:.2%}")
             >>> print(f"Sharpe Ratio: {pf.sharpe_ratio:.2f}")
             >>> print(f"Max Drawdown: {pf.max_drawdown:.2%}")
@@ -292,6 +417,15 @@ class BaseStrategy(ABC):
             - Fees and slippage from StrategyConfig
             - freq='1D': Assumes daily data (change if using intraday)
 
+        VBT Integration: VERIFIED (Steps 1-2 complete)
+            - vbt.Portfolio.from_signals: VERIFIED exists
+            - All parameters validated by MCP tools
+
+        Signal Format Compatibility:
+            - v2.0: 'entry_signal', 'exit_signal', 'stop_distance'
+            - v1.0: 'long_entries', 'long_exits', 'stop_distance'
+            - Auto-detects format and adapts
+
         Performance:
             - Fully vectorized (no Python loops)
             - Compiled Numba code (fast execution)
@@ -301,16 +435,34 @@ class BaseStrategy(ABC):
             This method should NOT be overridden by child classes.
             If you need custom VBT integration, create a new method.
         """
-        # Generate signals from child class
-        signals = self.generate_signals(data)
+        # Generate signals from child class (pass regime)
+        signals = self.generate_signals(data, regime=regime)
 
-        # Validate required signals exist
-        required_keys = {'long_entries', 'long_exits', 'stop_distance'}
-        if not required_keys.issubset(signals.keys()):
-            missing = required_keys - signals.keys()
+        # Auto-detect signal format and normalize to v1.0 format for VBT
+        # (VBT from_signals expects 'entries'/'exits' parameters)
+        if 'entry_signal' in signals and 'exit_signal' in signals:
+            # v2.0 format - convert to v1.0 format for VBT
+            long_entries = signals['entry_signal']
+            long_exits = signals['exit_signal']
+            short_entries = signals.get('short_entry_signal')
+            short_exits = signals.get('short_exit_signal')
+        elif 'long_entries' in signals and 'long_exits' in signals:
+            # v1.0 format - use directly
+            long_entries = signals['long_entries']
+            long_exits = signals['long_exits']
+            short_entries = signals.get('short_entries')
+            short_exits = signals.get('short_exits')
+        else:
             raise ValueError(
-                f"generate_signals() must return {required_keys}. "
-                f"Missing: {missing}"
+                f"generate_signals() must return either v2.0 format "
+                f"('entry_signal', 'exit_signal') or v1.0 format "
+                f"('long_entries', 'long_exits'). Got keys: {signals.keys()}"
+            )
+
+        # Validate stop_distance exists (required in both formats)
+        if 'stop_distance' not in signals:
+            raise ValueError(
+                "generate_signals() must return 'stop_distance' key"
             )
 
         # Extract stop distance for position sizing
@@ -337,13 +489,13 @@ class BaseStrategy(ABC):
             )
 
         # Run VectorBT Pro backtest
-        # Pattern validated in VBT_POSITION_SIZING_RESEARCH.md
+        # Pattern validated: vbt.Portfolio.from_signals VERIFIED via MCP
         pf = vbt.Portfolio.from_signals(
             close=data['Close'],
-            entries=signals['long_entries'],
-            exits=signals['long_exits'],
-            short_entries=signals.get('short_entries'),  # Optional
-            short_exits=signals.get('short_exits'),      # Optional
+            entries=long_entries,              # Normalized to v1.0 format
+            exits=long_exits,                   # Normalized to v1.0 format
+            short_entries=short_entries,        # Optional
+            short_exits=short_exits,            # Optional
             size=position_sizes,                # From calculate_position_size()
             size_type='amount',                 # Shares, not dollars
             init_cash=initial_capital,
