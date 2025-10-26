@@ -15,6 +15,8 @@ Market Regimes:
     CRASH: Extreme volatility event (special indicators triggered)
 """
 
+from regime.jump_model import JumpModel
+
 __all__ = [
     'JumpModel',
     'RegimeAllocator',
