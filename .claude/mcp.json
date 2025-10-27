@@ -1,4 +1,4 @@
-﻿{
+{
   "mcpServers": {
     "vectorbt-pro": {
       "command": "C:\\Strat_Trading_Bot\\vectorbt-workspace\\.venv\\Scripts\\python.exe",
@@ -6,6 +6,12 @@
       "env": {
         "GITHUB_TOKEN": "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"
       }
+    },
+    "openmemory": {
+      "command": "C:\\Program Files\\nodejs\\npm.cmd",
+      "args": ["run", "mcp"],
+      "cwd": "C:\\Dev\\openmemory\\backend",
+      "env": {}
     }
   }
 }
