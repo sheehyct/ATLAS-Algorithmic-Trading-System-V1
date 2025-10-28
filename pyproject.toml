@@ -57,4 +57,4 @@ members = []
 
 [tool.uv]
 managed = true
-default-groups = []
+default-groups = ["dev"]
