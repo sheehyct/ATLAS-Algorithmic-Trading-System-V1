@@ -175,13 +175,13 @@ class BaseStrategy(ABC):
                 f"Slippage {self.config.slippage:.2%} = {total_costs:.2%}"
             )
 
-    @abstractmethod
     def validate_parameters(self) -> bool:
         """
         Validate strategy-specific parameters are within acceptable ranges.
 
-        Child classes must implement parameter validation logic to ensure
-        strategy parameters are sensible and prevent configuration errors.
+        Default implementation returns True (no validation needed).
+        Child classes should override this method ONLY if they have
+        strategy-specific parameters that need validation.
 
         Returns:
             True if all parameters valid
@@ -202,8 +202,9 @@ class BaseStrategy(ABC):
             - Called automatically during __init__ after config validation
             - Use assertions for clarity (will raise AssertionError)
             - Provide helpful error messages with actual vs expected values
+            - If your strategy has no special parameters, no need to override
         """
-        pass
+        return True  # Default: no validation needed
 
     def should_trade_in_regime(self, regime: str) -> bool:
         """

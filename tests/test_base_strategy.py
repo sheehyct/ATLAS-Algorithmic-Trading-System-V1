@@ -15,6 +15,7 @@ import pytest
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
+from typing import Optional
 from strategies.base_strategy import BaseStrategy, StrategyConfig
 
 
@@ -22,7 +23,7 @@ from strategies.base_strategy import BaseStrategy, StrategyConfig
 class MockStrategy(BaseStrategy):
     """Simple strategy for testing BaseStrategy functionality"""
 
-    def generate_signals(self, data: pd.DataFrame) -> dict:
+    def generate_signals(self, data: pd.DataFrame, regime: Optional[str] = None) -> dict:
         """Generate simple buy-and-hold signals"""
         long_entries = pd.Series(False, index=data.index)
         long_exits = pd.Series(False, index=data.index)
@@ -164,7 +165,7 @@ class TestBaseStrategyAbstract:
 
         # Strategy missing calculate_position_size
         class IncompleteStrategy(BaseStrategy):
-            def generate_signals(self, data):
+            def generate_signals(self, data, regime=None):
                 return {}
             def get_strategy_name(self):
                 return "Incomplete"
@@ -221,7 +222,7 @@ class TestBaseStrategyBacktest:
         """Test backtest fails when generate_signals returns incomplete dict"""
 
         class BadSignalStrategy(BaseStrategy):
-            def generate_signals(self, data):
+            def generate_signals(self, data, regime=None):
                 # Missing 'stop_distance' key
                 return {
                     'long_entries': pd.Series(False, index=data.index),
@@ -243,7 +244,7 @@ class TestBaseStrategyBacktest:
         """Test backtest fails when calculate_position_size returns wrong type"""
 
         class BadPositionStrategy(BaseStrategy):
-            def generate_signals(self, data):
+            def generate_signals(self, data, regime=None):
                 return {
                     'long_entries': pd.Series(False, index=data.index),
                     'long_exits': pd.Series(False, index=data.index),
@@ -266,7 +267,7 @@ class TestBaseStrategyBacktest:
         """Test backtest fails when position sizes have mismatched index"""
 
         class MismatchedIndexStrategy(BaseStrategy):
-            def generate_signals(self, data):
+            def generate_signals(self, data, regime=None):
                 return {
                     'long_entries': pd.Series(False, index=data.index),
                     'long_exits': pd.Series(False, index=data.index),
@@ -337,7 +338,7 @@ class TestPerformanceMetrics:
         """Test metrics when no trades are executed"""
 
         class NoTradeStrategy(BaseStrategy):
-            def generate_signals(self, data):
+            def generate_signals(self, data, regime=None):
                 # No entries or exits
                 return {
                     'long_entries': pd.Series(False, index=data.index),

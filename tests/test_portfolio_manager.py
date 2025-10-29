@@ -23,6 +23,7 @@ import sys
 from pathlib import Path
 import pandas as pd
 import numpy as np
+from typing import Optional
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
@@ -50,7 +51,7 @@ class MockStrategy(BaseStrategy):
         super().__init__(config)
         self.return_pct = return_pct
 
-    def generate_signals(self, data: pd.DataFrame) -> dict:
+    def generate_signals(self, data: pd.DataFrame, regime: Optional[str] = None) -> dict:
         """Generate simple buy-and-hold signals."""
         long_entries = pd.Series(False, index=data.index)
         long_exits = pd.Series(False, index=data.index)

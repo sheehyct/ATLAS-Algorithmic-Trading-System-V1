@@ -241,7 +241,7 @@ class ORBStrategy(BaseStrategy):
             'opening_open': opening_open_ff
         }
 
-    def generate_signals(self, data: pd.DataFrame) -> Dict[str, pd.Series]:
+    def generate_signals(self, data: pd.DataFrame, regime: Optional[str] = None) -> Dict[str, pd.Series]:
         """
         Generate entry/exit signals with MANDATORY volume confirmation.
 
@@ -249,6 +249,7 @@ class ORBStrategy(BaseStrategy):
 
         Args:
             data: 5-minute OHLCV DataFrame with DatetimeIndex
+            regime: Optional market regime (currently not used by ORB)
 
         Returns:
             Dict containing:
@@ -392,6 +393,28 @@ class ORBStrategy(BaseStrategy):
     def get_strategy_name(self) -> str:
         """Return strategy name for logging/reporting"""
         return f"Opening Range Breakout (ORB) - {self.config.symbol}"
+
+    def validate_parameters(self) -> bool:
+        """
+        Validate ORB-specific parameters.
+
+        Checks:
+        - opening_minutes is reasonable (5-60 minutes)
+        - atr_stop_multiplier is within acceptable range (1.5-5.0)
+
+        Returns:
+            True if all parameters valid
+
+        Raises:
+            AssertionError: If validation fails
+        """
+        assert 5 <= self.config.opening_minutes <= 60, \
+            f"opening_minutes {self.config.opening_minutes} outside range [5, 60]"
+
+        assert 1.5 <= self.config.atr_stop_multiplier <= 5.0, \
+            f"atr_stop_multiplier {self.config.atr_stop_multiplier} outside range [1.5, 5.0]"
+
+        return True
 
     # Additional helper methods (not part of BaseStrategy interface)
 
